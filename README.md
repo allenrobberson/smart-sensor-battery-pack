@@ -135,15 +135,11 @@ Things to know before ordering assembly:
 
 Each board is laid out for one specific Keystone holder, and only that part fits its pads and locating holes:
 
-| Board | Holder | Mounting | Buy |
+| Board | Holder | Mounting | DigiKey |
 |-------|--------|----------|-----|
-| 18350 | Keystone **1096** | Surface mount (tabs soldered on the back) | [DigiKey 36-1096-ND](https://www.digikey.com/en/products/detail/keystone-electronics/1096/5057788) · [Amazon search](https://www.amazon.com/s?k=Keystone+1096+18350+battery+holder) |
-| 18650 | Keystone **1042** | Surface mount (tabs soldered on the back) | [DigiKey 36-1042-ND](https://www.digikey.com/en/products/detail/keystone-electronics/1042/2745668) · [Amazon search](https://www.amazon.com/s?k=Keystone+1042+18650+battery+holder) |
-| 21700 | Keystone **1121** (fits 20700 and 21700) | Through-hole lugs (soldered from the front) | [DigiKey 36-1121-ND](https://www.digikey.com/en/products/detail/keystone-electronics/1121/12751670) · [Amazon search](https://www.amazon.com/s?k=Keystone+1121+21700+battery+holder) |
-
-All three are also stocked by Mouser and Newark/Farnell; search for the Keystone part number.
-
-**About Amazon:** these exact Keystone parts don't usually have their own Amazon listings, so the Amazon links are searches, not product pages. Most "18650 holder" and "21700 holder" listings there are generic holders with different pads and pin spacing, and they won't fit these boards. Only buy one if the listing names the Keystone part number above. Otherwise, DigiKey or Mouser is the reliable source.
+| 18350 | Keystone **1096** | Surface mount (tabs soldered on the back) | [36-1096-ND](https://www.digikey.com/en/products/detail/keystone-electronics/1096/5057788) |
+| 18650 | Keystone **1042** | Surface mount (tabs soldered on the back) | [36-1042-ND](https://www.digikey.com/en/products/detail/keystone-electronics/1042/2745668) |
+| 21700 | Keystone **1121** (fits 20700 and 21700) | Through-hole lugs (soldered from the front) | [36-1121-ND](https://www.digikey.com/en/products/detail/keystone-electronics/1121/12751670) |
 
 **Soldering tips**
 - **1096 and 1042:** the holder sits on the back. Tack one tab, check the holder is flat with its locating pegs in the holes, then solder the other tab. The tabs are large, so use a hot iron (about 350 °C) and plenty of flux.
