@@ -21,7 +21,7 @@ substitutions:
   name: smart-sensor
   friendly_name: Smart Sensor
   awake_time: 20s        # safety limit: longest the node stays awake each cycle
-  sleep_time: 5min       # time between readings, e.g. 30s, 5min, 15min, 1h (README: battery life table)
+  sleep_time: 5min       # time between readings, e.g. 30s, 5min, 15min, 1h, 12h, 24h (README: battery life table)
   report_delay: 2s       # after Home Assistant connects, wait this long, then sleep
 
 esphome:

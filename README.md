@@ -356,7 +356,7 @@ The node appears with **Temperature**, **Humidity**, **Battery voltage** and **B
      sleep_time: 15min    # wake up and send a reading every 15 minutes
    ```
 
-   Use a number followed by a unit: `s` (seconds), `min` (minutes) or `h` (hours), for example `30s`, `5min`, `15min`, `1h`. The default is `5min`.
+   Use a number followed by a unit: `s` (seconds), `min` (minutes) or `h` (hours), for example `30s`, `5min`, `15min`, `1h`, `12h`, `24h`. The default is `5min`.
 3. **Keep the node awake so it can take the update.** A sleeping node can't receive new firmware. In Home Assistant, turn on the **Smart Sensor stay awake** toggle (`input_boolean.smart_sensor_stay_awake`, from `homeassistant/smart_sensor_package.yaml`), then wait for the node's next wake-up. Its status turns online in the ESPHome dashboard.
 4. **Install it.** Click **Save**, then **Install → Wirelessly**. The node restarts with the new interval.
 5. **Turn the stay-awake toggle off again.** The node goes back to its normal cycle on its next wake.
@@ -372,8 +372,12 @@ The time between readings is `sleep_time` plus the few seconds the node is awake
 | `15min` | about 3 months | about 9 months | over a year |
 | `30min` | about 6 months | over a year | over a year |
 | `1h` | about 11 months | over a year | over a year |
+| `12h` | about 3 years* | several years* | several years* |
+| `24h` | about 3–4 years* | several years* | several years* |
 
-These figures assume each wake lasts about 5 s at an average of about 68 mA (in line with a tester's PPK2 measurements on the original board, see [Sleep current](#sleep-current)) and about 25 µA while asleep, using 90% of the cell's capacity. Weak Wi-Fi, a slow plug-in sensor, a longer `report_delay` and cold temperatures all shorten battery life. Beyond about a year, the cell's own self-discharge starts to matter more than the board. Suggested intervals: 5–15 minutes for temperature and humidity, 15–60 minutes for soil moisture, and 2–5 minutes for CO₂ in a busy room.
+These figures assume each wake lasts about 5 s at an average of about 68 mA (in line with a tester's PPK2 measurements on the original board, see [Sleep current](#sleep-current)) and about 25 µA while asleep, using 90% of the cell's capacity. Weak Wi-Fi, a slow plug-in sensor, a longer `report_delay` and cold temperatures all shorten battery life. Beyond about a year, the cell's own self-discharge starts to matter more than the board.
+
+\* At 12- and 24-hour intervals, the wake-ups barely matter. Battery life is set by the ~25 µA sleep current and the cell's own self-discharge (typically 1–3% a month), so these figures are rough; check the battery level in Home Assistant now and then and recharge at least once a year. Use `sleep_time: 12h` or `24h` (ESPHome also accepts `720min` or `1440min`). For readings this far apart, a 1-hour reading is usually more useful for temperature and humidity; 12–24 hours suits slow-changing things such as a battery check or a storage-room log. Suggested intervals: 5–15 minutes for temperature and humidity, 15–60 minutes for soil moisture, and 2–5 minutes for CO₂ in a busy room.
 
 #### How long it stays awake
 Each cycle, the node wakes, connects to Wi-Fi and Home Assistant, sends its readings, and goes back to sleep. Three values at the top of `smart-sensor-xiao-esp32c6.yaml` control this:
