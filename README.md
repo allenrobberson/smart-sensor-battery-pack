@@ -164,7 +164,38 @@ Quoted price for 5 assembled boards, before shipping and coupons:
 | 18650 | $5.10 | $71.84 | **$76.94** |
 | 21700 | $5.10 | $71.84 | **$76.94** |
 
-For comparison, the same 18350 order as *Standard* PCBA on OSP came to $96.33. JLCPCB's *Desktop* app and new-user coupons usually take a few more dollars off.
+Assembly breakdown (Economic PCBA, 5 boards):
+
+| Item | 18350 | 18650 | 21700 |
+|------|-------|-------|-------|
+| Setup fee | $8.24 | $8.24 | $8.24 |
+| Stencil | $1.55 | $1.55 | $1.55 |
+| Components (19 BOM lines) | $26.09 | $26.10 | $26.10 |
+| Extended components fee | $30.90 | $33.99 | $33.99 |
+| SMT assembly | $1.05 | $1.05 | $1.05 |
+| Nitrogen reflow | $0.91 | $0.91 | $0.91 |
+| **Assembly total** | **$68.74** | **$71.84** | **$71.84** |
+| PCB (5 boards, lead-free HASL) | $5.10 | $5.10 | $5.10 |
+| **Per order** | **$73.84** | **$76.94** | **$76.94** |
+| **Per assembled board** | **$14.77** | **$15.39** | **$15.39** |
+
+The 18350 has one fewer extended part than the other two (its R1, C25862, is a basic part), so its fee is lower.
+
+All three boards in one checkout (15 assembled boards):
+
+| | Cost |
+|---|---|
+| Merchandise (3 × PCB + PCBA) | $227.72 |
+| Shipping to the US (0.70 kg, estimate) | $31.69 |
+| **Total before coupons** | **$259.41** |
+| New-user coupons, if JLCPCB accepts all three (SMT $10, PCB $6, shipping $10) | up to −$26.00 |
+| **Total after coupons** | **about $233.41** (about $15.56 per assembled board) |
+
+Not included: the battery holder (BT1, bought separately, see [Battery holders](#battery-holders)), the XIAO ESP32-C6, the battery, and any import duties.
+
+**Coupons:** JLCPCB uses account coupons rather than codes, and you choose them in the payment step of checkout. New accounts get New User SMT ($10), PCB ($6) and Shipping ($10) coupons, and the [coupon center](https://jlcpcb.com/coupon-center) has more (for example, "PCBA Special Offer" $9/$6). Checking out in the **JLCONE desktop app** unlocks a "JLCONE PCBA $20" coupon for assembly orders over $100, which beats the $10 one for a three-board order. JLCPCB's terms allow one coupon per order, so the checkout page has the final say. Check out all three boards together: separate orders each pay their own shipping (about $27), which costs more than the extra coupons save.
+
+For comparison, the same 18350 order as *Standard* PCBA on OSP came to $96.33.
 
 **Ways to cut the cost further:**
 - **Order 2 assembled boards instead of 5.** Most of the assembly cost is per-order fees (setup, extended-part fees), so 2 boards cost only a little less than 5, but the total is still lower if you only need one or two.
