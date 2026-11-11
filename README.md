@@ -209,20 +209,20 @@ The XIAO plugs into J1 and J2. J3 and J5 are for an optional plug-in sensor.
 6. **Check the readings:** with USB unplugged, the node should wake, report temperature, humidity and battery voltage, and go back to sleep. The battery voltage in Home Assistant should be within about 0.1 V of a multimeter reading across the cell.
 
 ## Adding other sensors
-Any 3.3 V I2C sensor breakout can plug into J3 or J5. It shares the bus with the onboard SHTC3 (address 0x70), so its I2C address must not be 0x70. The ones below have ESPHome support and suit a battery-powered node:
+Any 3.3 V I2C sensor breakout can plug into J3 or J5. It shares the bus with the onboard SHTC3 (address 0x70), so its I2C address must not be 0x70. The sensors below all have ESPHome support (platform names checked against the ESPHome docs; each name links to its page), and suit a battery-powered node:
 
 | Sensor | Measures | ESPHome platform | Fit for this board |
 |--------|----------|------------------|-------------------|
-| **SHT40 / SHT45** | Temperature, humidity (more accurate than the SHTC3) | `sht4x` | Excellent: fast, microamp current |
-| **BME280** | Temperature, humidity, air pressure | `bme280_i2c` | Excellent |
-| **BMP280** | Temperature, air pressure | `bmp280_i2c` | Excellent |
-| **AHT20** | Temperature, humidity | `aht10` (variant: AHT20) | Excellent, low cost |
-| **BH1750** | Light level (lux) | `bh1750` | Excellent |
-| **VEML7700** | Light level, wide range | `veml7700` | Excellent |
-| **TSL2591** | Light level, high dynamic range | `tsl2591` | Good |
-| **LTR390** | UV index and light | `ltr390` | Good |
-| **SCD40 / SCD41** | CO₂ (true NDIR), temperature, humidity | `scd4x` | Works, but use single-shot mode and a longer `awake_time`. CO₂ sensors draw much more current than the others, so battery life drops noticeably |
-| **BME680 / BME688** | Temperature, humidity, pressure, gas (VOC) | `bme680` | Temperature, humidity and pressure work well. The gas reading needs the sensor powered continuously to stabilize, so it's unreliable when the sensor is switched off between readings |
+| **SHT40 / SHT45** | Temperature, humidity (more accurate than the SHTC3) | [`sht4x`](https://esphome.io/components/sensor/sht4x.html) | Excellent: fast, microamp current |
+| **BME280** | Temperature, humidity, air pressure | [`bme280_i2c`](https://esphome.io/components/sensor/bme280.html) | Excellent |
+| **BMP280** | Temperature, air pressure | [`bmp280_i2c`](https://esphome.io/components/sensor/bmp280.html) | Excellent |
+| **AHT20** | Temperature, humidity | [`aht10`](https://esphome.io/components/sensor/aht10.html) with `variant: AHT20` | Excellent, low cost |
+| **BH1750** | Light level (lux) | [`bh1750`](https://esphome.io/components/sensor/bh1750.html) | Excellent |
+| **VEML7700** | Light level, wide range | [`veml7700`](https://esphome.io/components/sensor/veml7700.html) | Excellent |
+| **TSL2591** | Light level, high dynamic range | [`tsl2591`](https://esphome.io/components/sensor/tsl2591.html) | Good |
+| **LTR390** | UV index and light | [`ltr390`](https://esphome.io/components/sensor/ltr390.html) | Good |
+| **SCD40 / SCD41** | CO₂ (true NDIR), temperature, humidity | [`scd4x`](https://esphome.io/components/sensor/scd4x.html) | Works, but set `measurement_mode: single_shot` (each reading takes about 5 s) and a longer `awake_time`. CO₂ sensors draw much more current than the others, so battery life drops noticeably |
+| **BME680 / BME688** | Temperature, humidity, pressure, gas (VOC) | [`bme680`](https://esphome.io/components/sensor/bme680.html) | Temperature, humidity and pressure work well. The gas reading needs the sensor powered continuously to stabilize, so it's unreliable when the sensor is switched off between readings |
 | **SGP40 / SGP41, ENS160** | Air quality (VOC/NOx) | `sgp4x`, `ens160_i2c` | Not recommended: they need continuous power and a warm-up period, which defeats deep sleep |
 
 **Tips:**
