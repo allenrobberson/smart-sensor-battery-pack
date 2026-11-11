@@ -1,0 +1,135 @@
+# ESPHome config for the Smart Sensor Battery Pack with a Seeed XIAO ESP32-C6.
+#
+# Pins used by the board (XIAO label -> ESP32-C6 GPIO):
+#   D2  -> GPIO2   BATT_SENSE (battery voltage / 2, via 5.1M / 5.1M divider)
+#   D4  -> GPIO22  SDA
+#   D5  -> GPIO23  SCL
+#   D10 -> GPIO18  sensor power switch Q1 (LOW = sensor rail 3V_SW on)
+#
+# Power behaviour:
+#   * The sensor rail and the I2C pull-ups (R9, R10) only have power while Q1 is on.
+#     Q1 is switched on before I2C starts, and switched off just before deep sleep.
+#   * The ESP32-C6 internal I2C pull-ups are disabled. With them on, the SDA/SCL pins
+#     would feed current into the SHTC3 while its supply is off ("phantom powering").
+#   * Before sleeping, SDA, SCL and GPIO18 are set to high-impedance with no pulls,
+#     so nothing drives the unpowered sensor. R7 then holds Q1 off during sleep.
+#   * The node wakes, reads the sensors, reports, and goes back to deep sleep.
+
+substitutions:
+  name: smart-sensor
+  friendly_name: Smart Sensor
+  awake_time: 20s        # how long to stay awake each cycle
+  sleep_time: 5min       # how long to sleep between readings
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  on_boot:
+    # Priority 1200 runs before the I2C bus is set up (I2C uses priority 1000).
+    - priority: 1200
+      then:
+        - lambda: |-
+            gpio_config_t io = {};
+            io.intr_type = GPIO_INTR_DISABLE;
+            io.pull_up_en = GPIO_PULLUP_DISABLE;
+            io.pull_down_en = GPIO_PULLDOWN_DISABLE;
+            io.mode = GPIO_MODE_OUTPUT;
+            // GPIO18 low -> Q1 on -> sensor rail and I2C pull-ups powered.
+            // GPIO3 low enables the XIAO's RF switch, GPIO14 low selects its
+            // built-in antenna (set GPIO14 high for the U.FL antenna).
+            io.pin_bit_mask = (1ULL << 18) | (1ULL << 3) | (1ULL << 14);
+            gpio_config(&io);
+            gpio_set_level(GPIO_NUM_18, 0);
+            gpio_set_level(GPIO_NUM_3, 0);
+            gpio_set_level(GPIO_NUM_14, 0);
+  on_shutdown:
+    # Runs as the node enters deep sleep, after the sensors have finished.
+    - priority: -100
+      then:
+        - lambda: |-
+            gpio_config_t io = {};
+            io.intr_type = GPIO_INTR_DISABLE;
+            io.pull_up_en = GPIO_PULLUP_DISABLE;
+            io.pull_down_en = GPIO_PULLDOWN_DISABLE;
+            io.mode = GPIO_MODE_DISABLE;
+            // Release SDA/SCL first so nothing drives the sensor's pins,
+            io.pin_bit_mask = (1ULL << 22) | (1ULL << 23);
+            gpio_config(&io);
+            // then release GPIO18: R7 pulls Q1's gate high and the sensor rail turns off.
+            io.pin_bit_mask = (1ULL << 18);
+            gpio_config(&io);
+
+esp32:
+  board: esp32-c6-devkitc-1
+  variant: esp32c6
+  framework:
+    type: esp-idf
+
+logger:
+  level: INFO
+
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true       # skip the scan: shorter awake time
+  power_save_mode: light
+  # Lower transmit power saves battery. The RT9080 regulator handles full power
+  # (about 354 mA peak on the ESP32-C6), so raise this if the signal is weak.
+  output_power: 15dB
+  # A static IP shortens each wake-up further (optional):
+  # manual_ip:
+  #   static_ip: 192.168.1.50
+  #   gateway: 192.168.1.1
+  #   subnet: 255.255.255.0
+
+i2c:
+  sda: GPIO22
+  scl: GPIO23
+  frequency: 100kHz
+  scan: false
+  # The board has 10k pull-ups (R9, R10) on the switched sensor rail.
+  # Keep the internal pull-ups off so the sensor is never powered through SDA/SCL.
+  sda_pullup_enabled: false
+  scl_pullup_enabled: false
+
+sensor:
+  - platform: shtcx
+    update_interval: 5s
+    temperature:
+      name: Temperature
+    humidity:
+      name: Humidity
+
+  - platform: adc
+    id: battery_voltage
+    name: Battery voltage
+    pin: GPIO2
+    attenuation: 12db
+    samples: 16
+    update_interval: 5s
+    accuracy_decimals: 2
+    filters:
+      - multiply: 2.0      # undo the 5.1M / 5.1M divider
+
+  - platform: template
+    name: Battery level
+    unit_of_measurement: "%"
+    device_class: battery
+    accuracy_decimals: 0
+    update_interval: 5s
+    # Rough linear estimate: 3.3 V = 0 %, 4.15 V = 100 %
+    lambda: |-
+      float v = id(battery_voltage).state;
+      if (isnan(v)) return NAN;
+      float pct = (v - 3.3f) / (4.15f - 3.3f) * 100.0f;
+      return pct < 0 ? 0 : (pct > 100 ? 100 : pct);
+
+deep_sleep:
+  id: deep_sleep_1
+  run_duration: ${awake_time}
+  sleep_duration: ${sleep_time}

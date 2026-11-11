@@ -207,6 +207,8 @@ def main():
     ap.add_argument('--neg-y', type=float, default=OLD_NEG_PAD[1],
                     help='board Y of the BAT- pad centre (default %.2f, same as the 18350 board)' % OLD_NEG_PAD[1])
     ap.add_argument('--hole-clearance', type=float, default=0.25)
+    ap.add_argument('--set', action='append', default=[], metavar='REF=VALUE',
+                    help='override a part value in the variant (board and schematic), e.g. --set R1=910')
     a = ap.parse_args()
     cell = a.cell or a.name
 
@@ -339,6 +341,14 @@ def main():
     i = out.rindex('\n\t(embedded_fonts') if '\n\t(embedded_fonts' in out else out.rindex('\n)')
     out = out[:i + 1] + ''.join(new_segs) + out[i + 1:]
 
+    # 3b. Part value overrides (e.g. charge-current resistor).
+    overrides = dict(kv.split('=', 1) for kv in a.set)
+    for ref, val in overrides.items():
+        k = out.index('(property "Reference" "%s"' % ref)
+        fs = out.rindex('\n\t(footprint', 0, k) + 1; fe = block_span(out, fs)
+        blk = re.sub(r'\(property "Value" "[^"]*"', '(property "Value" "%s"' % val, out[fs:fe], count=1)
+        out = out[:fs] + blk + out[fe:]
+
     # 4. Write the variant project.
     vdir = os.path.join(ROOT, 'variants', a.name)
     os.makedirs(vdir, exist_ok=True)
@@ -365,6 +375,15 @@ def main():
     sym = re.sub(r'\(property "MAXIMUM_PACKAGE_HEIGHT" "[^"]*"', '(property "MAXIMUM_PACKAGE_HEIGHT" ""', sym, count=1)
     sch = sch[:s0] + sym + sch[e0:]
     open(sch_p, 'w', newline='\r\n').write(sch)
+
+    for ref, val in overrides.items():
+        for fn in ('BMS.kicad_sch', 'smart_sensor_battery.kicad_sch'):
+            fp_ = os.path.join(vdir, fn); txt = open(fp_).read()
+            key = '\n\t\t(property "Reference" "%s"' % ref
+            if key not in txt: continue
+            k = txt.index(key); ss = txt.rindex('\n\t(symbol', 0, k) + 1; se = block_span(txt, ss)
+            blk = re.sub(r'\(property "Value" "[^"]*"', '(property "Value" "%s"' % val, txt[ss:se], count=1)
+            open(fp_, 'w', newline='\r\n').write(txt[:ss] + blk + txt[se:])
 
     # 5. Report.
     feats = copper_features(tree)

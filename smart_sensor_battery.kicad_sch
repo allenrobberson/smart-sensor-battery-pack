@@ -3946,7 +3946,7 @@
 				)
 			)
 		)
-		(property "Value" "XIAO-nRF52840"
+		(property "Value" "XIAO ESP32-C6"
 			(at 146.05 83.7498 90)
 			(effects
 				(font
