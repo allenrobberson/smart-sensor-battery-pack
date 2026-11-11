@@ -16,6 +16,20 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from make_variant import parse, find, first, unq
 
 
+# JLCPCB's library models for some parts use a different zero angle from KiCad.
+# Footprint name -> degrees added to the KiCad rotation in the CPL file.
+# Checked in JLCPCB's placement preview: the staggered pins land on the pads.
+ROTATION_FIX = {
+    'PinSocket_1x07_P2.54mm_Vertical_SMD_Pin1Right': 270,   # J2, J3 (C42379199)
+    'PinSocket_1x07_P2.54mm_Vertical_SMD_Pin1Left': 90,     # J1 (C42379199)
+    'PinSocket_1x05_P2.54mm_Vertical_SMD_Pin1Left': 270,    # J5 (C42379198)
+    'SOT-23-5': 270,   # U4 (KiCad pads in columns, JLC part in rows)
+    'SOT-23-6': 180,   # U2
+    'SOT-23': 180,     # Q1, Q2
+    'Sensirion_DFN-4-1EP_2x2mm_P1mm_EP0.7x1.6mm': 270,   # U7 SHTC3
+}
+
+
 def sch_fields(project_dir):
     parts = {}
     for fn in os.listdir(project_dir):
@@ -47,8 +61,12 @@ def main():
         if ref in exclude or not lcsc:
             skipped.append((ref, P.get('Value', ''), 'excluded' if ref in exclude else 'no LCSC number'))
             continue
-        rows.append(dict(ref=ref, value=P.get('Value', ''), fp=unq(fp[1]).split(':')[-1], lcsc=lcsc,
-                         x=x, y=-y, side=side, rot=rot % 360))
+        fpname = unq(fp[1]).split(':')[-1]
+        fix = ROTATION_FIX.get(fpname, 0)
+        if '--rotfix' in a:
+            fix = float(a[a.index('--rotfix') + 1]) if fix else 0
+        rows.append(dict(ref=ref, value=P.get('Value', ''), fp=fpname, lcsc=lcsc,
+                         x=x, y=-y, side=side, rot=(rot + fix) % 360))
     os.makedirs(out, exist_ok=True)
     # One BOM line per LCSC part: JLCPCB rejects several lines matched to the same part
     # (e.g. the three 1x7 sockets, whose names and pin-1 side differ).

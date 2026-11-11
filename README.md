@@ -140,7 +140,7 @@ Every part except the battery holder uses a JLCPCB/LCSC part number:
 Things to know before ordering assembly:
 - **Battery holder:** BT1 is not in the BOM, so buy it separately and solder it yourself (see [Battery holders](#battery-holders) below).
 - **Extended parts:** most of the ICs are JLCPCB "extended" parts, which carry a small one-time loading fee each. Stock changes, so the quote page will flag anything that has run out.
-- **Check rotations:** in JLCPCB's placement preview, check the part rotations, especially the SOT-23 and WSON parts and the sockets. Their library sometimes uses a different zero angle from KiCad; you can rotate a part in the preview if it's off.
+- **Rotations are already corrected:** the CPL files include JLCPCB's zero-angle offsets for the sockets, SOT-23, SOT-23-5, SOT-23-6 and SHTC3 parts (see `ROTATION_FIX` in `tools/make_jlc_bom.py`), checked part by part in JLCPCB's placement preview. One exception is U6 (CSD85301Q2), where JLCPCB shows a generic WSON6 model whose pin-1 marker can't be lined up. The CPL keeps the board's orientation (pin 1 at the silkscreen dot, bottom-right), so add an assembly remark asking JLCPCB to confirm U6's pin 1.
 - **The XIAO:** it plugs into the sockets and isn't part of the order.
 
 ### Battery holders
