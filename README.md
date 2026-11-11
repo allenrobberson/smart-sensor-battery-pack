@@ -327,7 +327,7 @@ A complete ESPHome config is in [`firmware/smart-sensor-xiao-esp32c6.yaml`](firm
 ### Setting it up in Home Assistant
 1. **Install ESPHome:** add the ESPHome Device Builder add-on in Home Assistant (Settings → Add-ons), or use the `esphome` command line on your computer.
 2. **Add the secrets:** copy [`firmware/secrets.yaml.example`](firmware/secrets.yaml.example) to `secrets.yaml` and fill in your Wi-Fi details, an API encryption key, an OTA password and a fallback-hotspot password. In the Device Builder, open **Secrets** (top right) and paste the same keys there. `secrets.yaml` is ignored by git, so it won't be committed.
-3. **Add the device:** in the Device Builder choose **New device**, skip the wizard, and paste the contents of `smart-sensor-xiao-esp32c6.yaml` into the new device's file. You can change `name`, `sleep_time`, `report_delay` and `awake_time` at the top.
+3. **Add the device:** in the Device Builder choose **New device**, skip the wizard, and paste the contents of `smart-sensor-xiao-esp32c6.yaml` into the new device's file. You can change `name`, `sleep_time`, `report_delay` and `awake_time` at the top (see [Adjusting the wake and sleep timing](#adjusting-the-wake-and-sleep-timing)).
 4. **First flash over USB:** plug the XIAO into your computer and choose **Install → Plug into this computer** (or run `esphome run smart-sensor-xiao-esp32c6.yaml`). Later updates can go over Wi-Fi.
 5. **Add the device to Home Assistant:** wake the sensor (press the XIAO's reset button, or turn on the stay-awake toggle from step 6 first) so it is online, then:
    - **If it's discovered:** go to **Settings → Devices & services**. A "Discovered: smart-sensor" card appears; click **Add**, enter the API encryption key from your `secrets.yaml`, and click **Submit**.
@@ -344,6 +344,38 @@ A complete ESPHome config is in [`firmware/smart-sensor-xiao-esp32c6.yaml`](firm
 The node appears with **Temperature**, **Humidity**, **Battery voltage** and **Battery level** entities. Because the config uses deep sleep, ESPHome tells Home Assistant it is a sleeping device, so Home Assistant keeps the last reading between wake-ups instead of marking the sensor unavailable.
 
 ### Adjusting the wake and sleep timing
+
+#### How often the sensor wakes up (`sleep_time`)
+`sleep_time` sets the time between readings. It is the first thing to change if you want more frequent readings or a longer-lasting battery.
+
+1. **Open the config.** In Home Assistant go to **Settings → Add-ons → ESPHome Device Builder**, then click **Edit** on your Smart Sensor. If you use ESPHome on a computer, open `smart-sensor-xiao-esp32c6.yaml` instead.
+2. **Change `sleep_time`** in the `substitutions:` block at the top:
+
+   ```yaml
+   substitutions:
+     sleep_time: 15min    # wake up and send a reading every 15 minutes
+   ```
+
+   Use a number followed by a unit: `s` (seconds), `min` (minutes) or `h` (hours), for example `30s`, `5min`, `15min`, `1h`. The default is `5min`.
+3. **Keep the node awake so it can take the update.** A sleeping node can't receive new firmware. In Home Assistant, turn on the **Smart Sensor stay awake** toggle (`input_boolean.smart_sensor_stay_awake`, from `homeassistant/smart_sensor_package.yaml`), then wait for the node's next wake-up. Its status turns online in the ESPHome dashboard.
+4. **Install it.** Click **Save**, then **Install → Wirelessly**. The node restarts with the new interval.
+5. **Turn the stay-awake toggle off again.** The node goes back to its normal cycle on its next wake.
+
+The time between readings is `sleep_time` plus the few seconds the node is awake, so `5min` gives a reading roughly every 5 minutes and 5 seconds.
+
+**How the interval affects battery life (rough estimate):**
+
+| `sleep_time` | 18350 (~1100 mAh) | 18650 (~3000 mAh) | 21700 (~4500 mAh) |
+|---|---|---|---|
+| `1min` | about 1 week | about 3 weeks | about 1 month |
+| `5min` (default) | about 1 month | about 3 months | about 5 months |
+| `15min` | about 3 months | about 9 months | over a year |
+| `30min` | about 6 months | over a year | over a year |
+| `1h` | about 11 months | over a year | over a year |
+
+These figures assume each wake lasts about 5 s at an average of about 68 mA (in line with a tester's PPK2 measurements on the original board, see [Sleep current](#sleep-current)) and about 25 µA while asleep, using 90% of the cell's capacity. Weak Wi-Fi, a slow plug-in sensor, a longer `report_delay` and cold temperatures all shorten battery life. Beyond about a year, the cell's own self-discharge starts to matter more than the board. Suggested intervals: 5–15 minutes for temperature and humidity, 15–60 minutes for soil moisture, and 2–5 minutes for CO₂ in a busy room.
+
+#### How long it stays awake
 Each cycle, the node wakes, connects to Wi-Fi and Home Assistant, sends its readings, and goes back to sleep. Three values at the top of `smart-sensor-xiao-esp32c6.yaml` control this:
 
 ```yaml
