@@ -125,10 +125,30 @@ Every part except the battery holder uses a JLCPCB/LCSC part number:
 | XIAO sockets 1x7 / 1x5 SMD | J1, J2, J3 / J5 | C42379199 / C42379198 |
 
 Things to know before ordering assembly:
-- **Battery holder:** BT1 (Keystone 1096, 1042 or 1121) is not in the BOM. JLCPCB doesn't reliably stock it, and it sits on the back, which would need a second, more expensive assembly side. Buy it from DigiKey or Mouser and solder it yourself; the 1121's lugs solder from the front.
+- **Battery holder:** BT1 is not in the BOM, so buy it separately and solder it yourself (see [Battery holders](#battery-holders) below).
 - **Extended parts:** most of the ICs are JLCPCB "extended" parts, which carry a small one-time loading fee each. Stock changes, so the quote page will flag anything that has run out.
 - **Check rotations:** in JLCPCB's placement preview, check the part rotations, especially the SOT-23 and WSON parts and the sockets. Their library sometimes uses a different zero angle from KiCad; you can rotate a part in the preview if it's off.
 - **The XIAO:** it plugs into the sockets and isn't part of the order.
+
+### Battery holders
+**Note:** the battery holder is the one part JLCPCB does not assemble. It isn't in the BOM, because JLCPCB doesn't reliably stock these Keystone holders and they mount on the back of the board, which would need a second, more expensive assembly side. Order the holder for your board size and solder it yourself after the boards arrive.
+
+Each board is laid out for one specific Keystone holder, and only that part fits its pads and locating holes:
+
+| Board | Holder | Mounting | Buy |
+|-------|--------|----------|-----|
+| 18350 | Keystone **1096** | Surface mount (tabs soldered on the back) | [DigiKey 36-1096-ND](https://www.digikey.com/en/products/detail/keystone-electronics/1096/5057788) · [Amazon search](https://www.amazon.com/s?k=Keystone+1096+18350+battery+holder) |
+| 18650 | Keystone **1042** | Surface mount (tabs soldered on the back) | [DigiKey 36-1042-ND](https://www.digikey.com/en/products/detail/keystone-electronics/1042/2745668) · [Amazon search](https://www.amazon.com/s?k=Keystone+1042+18650+battery+holder) |
+| 21700 | Keystone **1121** (fits 20700 and 21700) | Through-hole lugs (soldered from the front) | [DigiKey 36-1121-ND](https://www.digikey.com/en/products/detail/keystone-electronics/1121/12751670) · [Amazon search](https://www.amazon.com/s?k=Keystone+1121+21700+battery+holder) |
+
+All three are also stocked by Mouser and Newark/Farnell; search for the Keystone part number.
+
+**About Amazon:** these exact Keystone parts don't usually have their own Amazon listings, so the Amazon links are searches, not product pages. Most "18650 holder" and "21700 holder" listings there are generic holders with different pads and pin spacing, and they won't fit these boards. Only buy one if the listing names the Keystone part number above. Otherwise, DigiKey or Mouser is the reliable source.
+
+**Soldering tips**
+- **1096 and 1042:** the holder sits on the back. Tack one tab, check the holder is flat with its locating pegs in the holes, then solder the other tab. The tabs are large, so use a hot iron (about 350 °C) and plenty of flux.
+- **1121:** push the lugs and pegs through from the back, then solder the two lugs on the front.
+- **Polarity:** check it before inserting a cell. The + end of the holder must match the + mark on the board (the BAT+ end, away from the sensor tab). Q2 protects the board if a cell goes in backwards, but double-check anyway.
 
 The files come from [`tools/make_jlc_bom.py`](tools/make_jlc_bom.py), which reads the *LCSC Part no.* field from each schematic and the positions from the board, in the same coordinates as the Gerbers.
 
