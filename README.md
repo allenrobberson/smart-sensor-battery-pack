@@ -71,7 +71,11 @@ A complete ESPHome config is in [`firmware/smart-sensor-xiao-esp32c6.yaml`](firm
 2. **Add the secrets:** copy [`firmware/secrets.yaml.example`](firmware/secrets.yaml.example) to `secrets.yaml` and fill in your Wi-Fi details, an API encryption key, an OTA password and a fallback-hotspot password. In the Device Builder, open **Secrets** (top right) and paste the same keys there. `secrets.yaml` is ignored by git, so it won't be committed.
 3. **Add the device:** in the Device Builder choose **New device**, skip the wizard, and paste the contents of `smart-sensor-xiao-esp32c6.yaml` into the new device's file. You can change `name`, `awake_time` and `sleep_time` at the top.
 4. **First flash over USB:** plug the XIAO into your computer and choose **Install → Plug into this computer** (or run `esphome run smart-sensor-xiao-esp32c6.yaml`). Later updates can go over Wi-Fi.
-5. **Add it to Home Assistant:** it shows up under Settings → Devices & Services as a discovered ESPHome device. Click **Configure** and enter the same API encryption key.
+5. **Add the device to Home Assistant:** wake the sensor (press the XIAO's reset button, or turn on the stay-awake toggle from step 6 first) so it is online, then:
+   - **If it's discovered:** go to **Settings → Devices & services**. A "Discovered: smart-sensor" card appears; click **Add**, enter the API encryption key from your `secrets.yaml`, and click **Submit**.
+   - **If it isn't discovered:** go to **Settings → Devices & services → Add integration**, search for **ESPHome**, enter `smart-sensor.local` (or the sensor's IP address) as the host with port `6053`, then enter the API encryption key.
+   - **Pick an area:** choose where the sensor lives (for example "Bedroom") and click **Finish**.
+   - **Allow actions:** on the device page, open **Configure** and turn on *Allow the device to perform Home Assistant actions*. That isn't strictly needed for the stay-awake toggle, but it avoids a warning in the ESPHome logs.
 6. **Add the stay-awake toggle:** copy [`homeassistant/smart_sensor_package.yaml`](homeassistant/smart_sensor_package.yaml) to `<config>/packages/` and add this to `configuration.yaml`, then restart Home Assistant:
    ```yaml
    homeassistant:
