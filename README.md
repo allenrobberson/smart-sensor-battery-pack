@@ -3,31 +3,35 @@ This is the experimental battery charging PCB designed for my YouTube video. You
 
 [![Watch the video](https://img.youtube.com/vi/-wEKOhVZ0NM/0.jpg)](https://www.youtube.com/watch?v=-wEKOhVZ0NM)
 
-### Please note: 
-This board is currently missing a pull up resistor on the SCL/SDA lines - I will be adding this very soon. Software correction is possible using the XIAO pull-ups, and closing the FET early in the boot cycle. So using the board in its current form just makes the code a little more verbose. 
+### Please note: I2C pull-ups and sensor power
+The board has 10k pull-up resistors on SDA (R10) and SCL (R9), but they connect to the switched sensor rail (3V_SW), not to 3V3. That rail is switched by the P-channel MOSFET Q1, and R7 holds Q1 off at reset. So until the firmware turns Q1 on, the sensor is unpowered and the I2C bus has no pull-ups.
 
-```
-# Force GPIO18 LOW (Turns P-Channel MOSFET on)
-# Set priority such that this runs before i2c initialises
+If ESPHome sets up I2C while Q1 is still off, it won't find the sensor. Turn Q1 on before I2C initialises by driving GPIO18 low in an `on_boot` step with a priority higher than I2C's (1000). The XIAO's internal pull-ups aren't needed with this revision.
+
+```yaml
+# Drive GPIO18 low to turn on Q1 (sensor power and I2C pull-ups).
+# Priority 1200 runs this before I2C initialises (priority 1000).
 esphome:
   on_boot:
     - priority: 1200
       then:
         - lambda: |-
             gpio_config_t io_conf = {};
-            io_conf.pin_bit_mask = (1ULL<<18);
+            io_conf.pin_bit_mask = (1ULL << 18);
             io_conf.mode = GPIO_MODE_OUTPUT;
             io_conf.pull_up_en = GPIO_PULLUP_DISABLE;
             io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
             io_conf.intr_type = GPIO_INTR_DISABLE;
             gpio_config(&io_conf);
             gpio_set_level(GPIO_NUM_18, 0);
+```
 
-# Software accessible pullups
+If your board was made before R9 and R10 were added, also enable the XIAO's internal pull-ups:
+
+```yaml
 i2c:
   sda_pullup_enabled: true
   scl_pullup_enabled: true
-
 ```
 
 ## ⚠️ Safety Warning
