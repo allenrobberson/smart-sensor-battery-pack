@@ -43,6 +43,19 @@ The 18350 board keeps its original size and front layout; Q2 and the moved therm
 - **README rewritten:** board descriptions, comparison images, setup steps and known limitations.
 
 
+## Quick start
+Here's everything you need to build one, in order:
+
+1. **Pick a board size:** 18350 (smallest), 18650 or 21700 (longest runtime). See [The three designs](#the-three-designs).
+2. **Order the board:** upload that board's Gerber zip from [`gerbers/`](gerbers) to JLCPCB. Optionally add assembly with the matching BOM and placement files from [`assembly/`](assembly); see [Ordering boards](#ordering-boards-gerber-files).
+3. **Buy the parts that aren't on the board order:**
+   - The **battery holder** for your size, from DigiKey (see [Battery holders](#battery-holders)).
+   - A **Seeed XIAO ESP32-C6** ([product wiki](https://wiki.seeedstudio.com/xiao_esp32c6_getting_started)).
+   - A **lithium-ion cell** (see [Batteries](#batteries)).
+4. **Solder the holder, then check the board** before inserting a cell (see [Assembly and first power-up](#assembly-and-first-power-up)).
+5. **Flash the firmware and add the sensor to Home Assistant** (see [Firmware](#firmware-esphome-xiao-esp32-c6)).
+6. **Optionally plug in a second sensor** (see [Adding other sensors](#adding-other-sensors)).
+
 ## What the board does
 - **Microcontroller:** made for a Seeed **XIAO ESP32-C6**. The board uses D2 (GPIO2) for battery voltage, D4/D5 (GPIO22/23) for I2C and D10 (GPIO18) to switch the sensor power.
 - **Charging:** a BQ21040 charges the cell from the XIAO's USB 5 V, and an LED shows charge status. R1 sets the charge current: 450 mA on the 18350 board and about 590 mA on the 18650 and 21700 boards, so a full charge fits inside the charger's 10-hour safety timer.
@@ -165,6 +178,66 @@ The design changes in this fork (reverse-battery transistor, NTC, new regulator,
 - **Cell temperature is measured on the board, not on the cell.** The thermistor sits on the front, above the cell, so it reads board temperature. Charging can pause on a hot day once the board passes about 45 °C.
 - **A completely flat cell (near 0 V) won't charge.** Q2 needs a couple of volts across the cell to turn on. Cells that low shouldn't be recovered anyway.
 - **USB plugged in with a nearly empty cell.** When the XIAO runs from USB, its own regulator also drives 3.3 V. If the cell is below about 3.0 V at that moment, the RT9080's output sits slightly above its input, past its 0.3 V reverse rating. The original design had the same behaviour; it lasts only until the cell charges past 3 V.
+
+## Connectors and pinout
+The XIAO plugs into J1 and J2. J3 and J5 are for an optional plug-in sensor.
+
+| Socket | Pin 1 | Pin 2 | Pin 3 | Pin 4 | Pin 5 | Pin 6 | Pin 7 |
+|--------|-------|-------|-------|-------|-------|-------|-------|
+| **J1** (XIAO left row) | D0 – free | D1 – free | D2 – BATT_SENSE | D3 – free | D4 – SDA | D5 – SCL | D6 – free |
+| **J2** (XIAO right row) | D7 – free | D8 – free | D9 – free | D10 – sensor power (Q1) | 3V3 | GND | 5V (USB) |
+| **J3** (sensor socket, top edge) | 3V3 switched | not connected | GND | SCL | SDA | not connected | not connected |
+| **J5** (sensor socket, middle) | SDA | SCL | GND | not connected | 3V3 switched |  |  |
+
+- **Switched 3.3 V:** this rail on J3 and J5 is the sensor rail controlled by Q1. It's only powered while the firmware holds D10 (GPIO18) low, so a plug-in sensor is switched off during deep sleep, just like the onboard SHTC3.
+- **J3's pin order** (power, unused, GND, SCL, SDA) is the common breakout header order *VIN, 3Vo, GND, SCL, SDA*, so many 5-pin breakouts plug straight in. Always check the header order printed on your breakout first.
+- **Free XIAO pins:** D0, D1, D3, D6, D7, D8 and D9 aren't connected to anything on the board, so you can use them for your own additions.
+
+## Batteries
+- **Cell type:** use a single **3.7 V lithium-ion cell** of the size your board is built for (18350, 18650, or 20700/21700). The board has its own protection (BQ29700) and reverse-battery protection (Q2), so unprotected cells are fine.
+- **Cell length:** protected cells are a few millimetres longer and may not fit the holder.
+- **Cell source:** buy from a reputable cell manufacturer or a known battery retailer. Avoid unbranded cells with inflated capacity ratings.
+- **Charge time:** about 3 hours for a typical 18350, 6–8 hours for an 18650 and up to about 9 hours for a 5000 mAh 21700. The charger's 10-hour safety timer covers all of these.
+- **Polarity:** match the cell's + end to the + mark on the holder. Q2 protects the board if a cell goes in backwards, but the cell won't charge or run the board until it's turned around.
+
+## Assembly and first power-up
+1. **Solder the board:** solder the battery holder, and anything else you didn't have assembled. The [BOM files](assembly) list every part with its LCSC number, so you can also order them from LCSC and hand-solder.
+2. **Check before inserting a cell:** use a multimeter to check there's no short between the holder's + and − pads, or between 3V3 and GND on J2.
+3. **First power on USB only:** insert the XIAO, but no cell yet, and plug USB into the XIAO. The charge LED may flicker, because the charger is looking for a battery; that's normal.
+4. **Flash the firmware** over USB (see [Firmware](#firmware-esphome-xiao-esp32-c6)).
+5. **Insert the cell:** with USB still connected, the charge LED should light while the cell charges and turn off when it's full.
+6. **Check the readings:** with USB unplugged, the node should wake, report temperature, humidity and battery voltage, and go back to sleep. The battery voltage in Home Assistant should be within about 0.1 V of a multimeter reading across the cell.
+
+## Adding other sensors
+Any 3.3 V I2C sensor breakout can plug into J3 or J5. It shares the bus with the onboard SHTC3 (address 0x70), so its I2C address must not be 0x70. The ones below have ESPHome support and suit a battery-powered node:
+
+| Sensor | Measures | ESPHome platform | Fit for this board |
+|--------|----------|------------------|-------------------|
+| **SHT40 / SHT45** | Temperature, humidity (more accurate than the SHTC3) | `sht4x` | Excellent: fast, microamp current |
+| **BME280** | Temperature, humidity, air pressure | `bme280_i2c` | Excellent |
+| **BMP280** | Temperature, air pressure | `bmp280_i2c` | Excellent |
+| **AHT20** | Temperature, humidity | `aht10` (variant: AHT20) | Excellent, low cost |
+| **BH1750** | Light level (lux) | `bh1750` | Excellent |
+| **VEML7700** | Light level, wide range | `veml7700` | Excellent |
+| **TSL2591** | Light level, high dynamic range | `tsl2591` | Good |
+| **LTR390** | UV index and light | `ltr390` | Good |
+| **SCD40 / SCD41** | CO₂ (true NDIR), temperature, humidity | `scd4x` | Works, but use single-shot mode and a longer `awake_time`. CO₂ sensors draw much more current than the others, so battery life drops noticeably |
+| **BME680 / BME688** | Temperature, humidity, pressure, gas (VOC) | `bme680` | Temperature, humidity and pressure work well. The gas reading needs the sensor powered continuously to stabilize, so it's unreliable when the sensor is switched off between readings |
+| **SGP40 / SGP41, ENS160** | Air quality (VOC/NOx) | `sgp4x`, `ens160_i2c` | Not recommended: they need continuous power and a warm-up period, which defeats deep sleep |
+
+**Tips:**
+- **Pull-up resistors:** breakouts with their own pull-ups are fine; they sit in parallel with R9 and R10. Breakouts with a power LED waste battery, so cut or remove the LED if you can.
+- **5 V-only sensors** such as particulate sensors and most PMS-series modules won't work. The sockets supply 3.3 V only.
+- **Config example:** add the sensor to the ESPHome config next to the SHTC3. For example, an SHT40:
+  ```yaml
+  sensor:
+    - platform: sht4x
+      temperature:
+        name: Temperature (SHT40)
+      humidity:
+        name: Humidity (SHT40)
+      update_interval: 5s
+  ```
 
 ## Firmware (ESPHome, XIAO ESP32-C6)
 A complete ESPHome config is in [`firmware/smart-sensor-xiao-esp32c6.yaml`](firmware/smart-sensor-xiao-esp32c6.yaml). It does the following:

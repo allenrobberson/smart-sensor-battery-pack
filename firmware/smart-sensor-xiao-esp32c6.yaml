@@ -159,3 +159,15 @@ deep_sleep:
   id: deep_sleep_1
   run_duration: ${awake_time}
   sleep_duration: ${sleep_time}
+
+# Adding a plug-in sensor on J3 or J5: add it under `sensor:` above, on the same
+# I2C bus. Any address except 0x70 (the onboard SHTC3) works. Example for an SHT40:
+#
+#  - platform: sht4x
+#    temperature:
+#      name: Temperature (SHT40)
+#    humidity:
+#      name: Humidity (SHT40)
+#    update_interval: 5s
+#
+# The README's "Adding other sensors" section lists more options.
