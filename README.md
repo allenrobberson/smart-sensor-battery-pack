@@ -223,7 +223,7 @@ Any 3.3 V I2C sensor breakout can plug into J3 or J5. It shares the bus with the
 | **LTR390** | UV index and light | [`ltr390`](https://esphome.io/components/sensor/ltr390.html) | Good |
 | **SCD40 / SCD41** | CO₂ (true NDIR), temperature, humidity | [`scd4x`](https://esphome.io/components/sensor/scd4x.html) | Works, but set `measurement_mode: single_shot` (each reading takes about 5 s) and a longer `awake_time`. CO₂ sensors draw much more current than the others, so battery life drops noticeably |
 | **BME680 / BME688** | Temperature, humidity, pressure, gas (VOC) | [`bme680`](https://esphome.io/components/sensor/bme680.html) | Temperature, humidity and pressure work well. The gas reading needs the sensor powered continuously to stabilize, so it's unreliable when the sensor is switched off between readings |
-| **SGP40 / SGP41, ENS160** | Air quality (VOC/NOx) | `sgp4x`, `ens160_i2c` | Not recommended: they need continuous power and a warm-up period, which defeats deep sleep |
+| **SGP40 / SGP41, ENS160** | Air quality (VOC/NOx) | [`sgp4x`](https://esphome.io/components/sensor/sgp4x.html), [`ens160_i2c`](https://esphome.io/components/sensor/ens160.html) | Not recommended: they need continuous power and a warm-up period, which defeats deep sleep |
 
 **Tips:**
 - **Pull-up resistors:** breakouts with their own pull-ups are fine; they sit in parallel with R9 and R10. Breakouts with a power LED waste battery, so cut or remove the LED if you can.
