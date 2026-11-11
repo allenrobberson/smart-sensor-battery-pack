@@ -133,7 +133,7 @@ Every part except the battery holder uses a JLCPCB/LCSC part number:
 | 10 µF 0603 | C3 | C19702 (basic part) |
 | 2.2 µF 0603 | C1, C2 | C23630 (basic part) |
 | 100 nF 0402 | C4, C5, C6 | C1525 |
-| Charge-current resistor | R1 | 1.2 kΩ C25862 (18350), 910 Ω C4129882 (18650, 21700) |
+| Charge-current resistor | R1 | 1.2 kΩ C25862 (18350), 910 Ω C44933 (18650, 21700) |
 | Other 0402 resistors, LED | R3–R12, D1 | see the BOM files |
 | XIAO sockets 1x7 / 1x5 SMD | J1, J2, J3 / J5 | C42379199 / C42379198 |
 
