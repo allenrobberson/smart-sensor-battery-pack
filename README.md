@@ -2,11 +2,42 @@
 
 A small battery board for a Seeed XIAO microcontroller and an SHTC3 temperature and humidity sensor, for building wireless sensors that run on a single lithium-ion cell. The XIAO plugs into sockets on the front, and the cell sits in a holder on the back.
 
-This fork of [FeatureNAB/smart-sensor-battery-pack](https://github.com/FeatureNAB/smart-sensor-battery-pack) adds two larger battery sizes. The original 18350 design is kept unchanged, and the 18650 and 21700 boards use the same circuit and the same front-side layout.
+This is a fork of [FeatureNAB/smart-sensor-battery-pack](https://github.com/FeatureNAB/smart-sensor-battery-pack). It adds two larger battery sizes (18650 and 21700), a few protection and power improvements, and ready-to-use ESPHome firmware for Home Assistant. All three boards share the same circuit and front-side layout. The full list of changes is under [Changes from the original design](#changes-from-the-original-design).
 
 The original design, with the build, design theory and assembly, is explained in this video:
 
 [![Watch the video](https://img.youtube.com/vi/-wEKOhVZ0NM/0.jpg)](https://www.youtube.com/watch?v=-wEKOhVZ0NM)
+
+## Thank you
+A big thank you to **FeatureNAB** for designing this board and sharing it openly, along with the video that explains how and why it works. The charging, protection and sensor-isolation design, the compact layout, and the KiCad project are all their work. This fork only builds on that foundation. If you find this useful, please watch and support the [original video](https://www.youtube.com/watch?v=-wEKOhVZ0NM) and [repository](https://github.com/FeatureNAB/smart-sensor-battery-pack).
+
+## Changes from the original design
+**New board sizes**
+- **18650 board** (`variants/18650/`): Keystone 1042 holder, 23 x 86.25 mm.
+- **21700 board** (`variants/21700/`): Keystone 1121 holder (also fits 20700), 24 x 84.55 mm.
+- **Variant generator** (`tools/make_variant.py`): rebuilds the larger boards from the 18350 master after any change, swaps the holder, resizes the outline and checks that the holder's holes clear existing copper.
+
+**Circuit changes (all three boards)**
+
+| Part | Original | This fork | Why |
+|------|----------|-----------|-----|
+| Q2 (new) | — | AO3401A P-MOSFET in the battery + line | Protects everything if the cell is inserted backwards |
+| U4 regulator | TPS7A05 (200 mA) | RT9080-33GJ5 (600 mA, 2 µA quiescent) | The ESP32-C6 draws up to 354 mA when Wi-Fi transmits; same footprint and pinout |
+| C3 (3.3 V cap) | 2.2 µF | 10 µF | Absorbs Wi-Fi current bursts |
+| R2 (charger TS) | 10 kΩ fixed resistor | 10 kΩ NTC thermistor, moved away from the charger | Stops charging when too cold or hot; the fixed resistor disabled this |
+| R1 (charge current) | 1.2 kΩ (450 mA) | 18350: unchanged. 18650 and 21700: 910 Ω (about 590 mA) | Larger cells finish charging inside the charger's 10-hour safety timer |
+| U1 (schematic) | XIAO nRF52840 | XIAO ESP32-C6 | Matches the firmware; the sockets are the same |
+
+The 18350 board keeps its original size and front layout; Q2 and the moved thermistor fit in free space in the top-right corner.
+
+**Firmware and Home Assistant (new)**
+- **ESPHome config** for the XIAO ESP32-C6 (`firmware/`) with deep sleep, sensor power sequencing, internal I2C pull-ups disabled and pins released before sleep, so the sensor is never powered through its data lines.
+- **Home Assistant package** (`homeassistant/`) adding a "stay awake" toggle for over-the-air updates, plus a secrets template.
+
+**Documentation**
+- **I2C note corrected:** the original note said pull-ups were missing. R9 and R10 are already in the design, on the switched sensor rail.
+- **README rewritten:** board descriptions, comparison images, setup steps and known limitations.
+
 
 ## What the board does
 - **Microcontroller:** made for a Seeed **XIAO ESP32-C6**. The board uses D2 (GPIO2) for battery voltage, D4/D5 (GPIO22/23) for I2C and D10 (GPIO18) to switch the sensor power.
@@ -138,4 +169,4 @@ This project is shared under the [Creative Commons Attribution-NonCommercial-Sha
 These files are provided "As Is" for educational purposes ONLY. I am sharing my personal project notes. **I accept no liability for any damage, injury, or loss** that occurs from the use or assembly of these files. Use them at your own risk.
 
 ## Credits
-Original design by [FeatureNAB](https://github.com/FeatureNAB/smart-sensor-battery-pack). The 18650 and 21700 variants are shared under the same CC BY-NC-SA 4.0 license.
+Original design, schematic, layout and video by [FeatureNAB](https://github.com/FeatureNAB/smart-sensor-battery-pack). This fork's changes are listed under [Changes from the original design](#changes-from-the-original-design) and are shared under the same CC BY-NC-SA 4.0 license, as the original requires.
