@@ -83,7 +83,7 @@ A complete ESPHome config is in [`firmware/smart-sensor-xiao-esp32c6.yaml`](firm
    ```
    To update the firmware later, turn the toggle on, wait for the sensor's next wake-up, install the update, then turn the toggle off.
 
-The node appears with **Temperature**, **Humidity**, **Battery voltage** and **Battery level** entities. While it sleeps, Home Assistant shows them as unavailable between reports; that is normal for a deep-sleep device.
+The node appears with **Temperature**, **Humidity**, **Battery voltage** and **Battery level** entities. Because the config uses deep sleep, ESPHome tells Home Assistant it is a sleeping device, so Home Assistant keeps the last reading between wake-ups instead of marking the sensor unavailable.
 
 ### Sleep current
 While the XIAO sleeps, the board itself draws only a few microamps: the regulator about 2 µA, the protector about 4 µA, the charger's battery leakage about 1 µA and the divider 0.4 µA. The XIAO's own deep-sleep current comes on top; the ESP32-C6 chip alone is rated at 7 µA.
