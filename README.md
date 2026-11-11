@@ -104,7 +104,7 @@ Ready-to-upload Gerber zips for all three boards are in [`gerbers/`](gerbers):
 | 18650 | [`gerbers/SSB-18650-gerbers.zip`](gerbers/SSB-18650-gerbers.zip) | 23 x 86.25 mm |
 | 21700 | [`gerbers/SSB-21700-gerbers.zip`](gerbers/SSB-21700-gerbers.zip) | 24 x 84.55 mm |
 
-**To order at JLCPCB:** upload a zip on the quote page and keep the defaults: 2 layers, 1.6 mm FR-4, 1 oz copper. Choose any solder-mask colour. Each zip holds both copper layers, solder mask, paste, silkscreen, the board outline, and plated and non-plated drill files.
+**To order at JLCPCB:** upload a zip on the quote page and keep the defaults: 2 layers, 1.6 mm FR-4, 1 oz copper. Choose any solder-mask colour. If you want JLCPCB to assemble the parts, pick **LeadFree HASL** so the cheaper Economic assembly is allowed (see [Tested JLCPCB order settings](#tested-jlcpcb-order-settings-november-2026)). Each zip holds both copper layers, solder mask, paste, silkscreen, the board outline, and plated and non-plated drill files.
 
 ![Copper layers of all three boards](docs/images/gerber_copper.png)
 
@@ -142,6 +142,40 @@ Things to know before ordering assembly:
 - **Extended parts:** most of the ICs are JLCPCB "extended" parts, which carry a small one-time loading fee each. Stock changes, so the quote page will flag anything that has run out.
 - **Rotations are already corrected:** the CPL files include JLCPCB's zero-angle offsets for the sockets, SOT-23, SOT-23-5, SOT-23-6 and SHTC3 parts (see `ROTATION_FIX` in `tools/make_jlc_bom.py`), checked part by part in JLCPCB's placement preview. One exception is U6 (CSD85301Q2), where JLCPCB shows a generic WSON6 model whose pin-1 marker can't be lined up. The CPL keeps the board's orientation (pin 1 at the silkscreen dot, bottom-right), so add an assembly remark asking JLCPCB to confirm U6's pin 1.
 - **The XIAO:** it plugs into the sockets and isn't part of the order.
+
+#### Tested JLCPCB order settings (November 2026)
+The files in `gerbers/` and `assembly/` are exactly the ones uploaded for a real order of all three boards. These settings went through without errors:
+
+| Setting | Value | Why |
+|---------|-------|-----|
+| Surface finish | **LeadFree HASL** | Economic PCBA does not accept OSP. Lead-free HASL costs about $1.10 more, but it unlocks the much cheaper assembly tier |
+| PCBA type | **Economic** | Setup fee about $8 instead of about $26, a $1.55 stencil instead of $8.27, and no per-feeder loading fees (only a ~$3 fee per extended part) |
+| PCB qty / PCBA qty | 5 / 5 | Economic PCBA allows 2 to 50 assembled boards |
+| Assembly side | Top | BT1 on the back is soldered by hand |
+| Tooling holes | Added by JLCPCB | Default |
+| Product description | Sensor\Controller\Precision Instrument / Temperature Sensor | Needed for customs |
+| Assembly remark | "Please confirm pin 1 orientation of U6 (CSD85301Q2, LCSC C544396): pin 1 must be at the silkscreen dot (bottom-right corner of U6)." | The preview's generic model can't show U6's pin 1 (see above) |
+
+Quoted price for 5 assembled boards, before shipping and coupons:
+
+| Board | PCB | Assembly (Economic) | Total |
+|-------|-----|---------------------|-------|
+| 18350 | $5.10 | $68.74 | **$73.84** |
+| 18650 | $5.10 | $71.84 | **$76.94** |
+| 21700 | $5.10 | $71.84 | **$76.94** |
+
+For comparison, the same 18350 order as *Standard* PCBA on OSP came to $96.33. JLCPCB's *Desktop* app and new-user coupons usually take a few more dollars off.
+
+**Ways to cut the cost further:**
+- **Order 2 assembled boards instead of 5.** Most of the assembly cost is per-order fees (setup, extended-part fees), so 2 boards cost only a little less than 5, but the total is still lower if you only need one or two.
+- **Order one or two sizes, not all three.** Each design pays its own setup and extended-part fees.
+- **Solder the XIAO sockets yourself.** J1–J3 and J5 (C42379199, C42379198) cost about $5.65 in parts per 5-board order, plus two extended-part fees (about $6). Untick them on the BOM page and solder ordinary 2.54 mm female headers.
+- **Drop the status LED.** D1 (and its resistor R8) are optional. Unticking D1 saves one extended-part fee.
+- **Basic parts were preferred** where they did not change the circuit: R7 (100 kΩ) uses basic part C25741.
+
+**Part changes made while ordering:**
+- **R1 on the 18650/21700:** C4129882 (910 Ω, 5%) was out of stock, so R1 is now Uniroyal 0402WGF9100TCE, **C44933** (910 Ω, 1%, about 228k in stock). The value and charge current (about 590 mA) are unchanged.
+- **R7, all boards:** now C25741 (basic, 1%) instead of C25530 (extended, 5%). Same 100 kΩ value.
 
 ### Battery holders
 **Note:** the battery holder is the one part JLCPCB does not assemble. It isn't in the BOM, because JLCPCB doesn't reliably stock these Keystone holders and they mount on the back of the board, which would need a second, more expensive assembly side. Order the holder for your board size and solder it yourself after the boards arrive.
