@@ -13,13 +13,16 @@
 #     would feed current into the SHTC3 while its supply is off ("phantom powering").
 #   * Before sleeping, SDA, SCL and GPIO18 are set to high-impedance with no pulls,
 #     so nothing drives the unpowered sensor. R7 then holds Q1 off during sleep.
-#   * The node wakes, reads the sensors, reports, and goes back to deep sleep.
+#   * The node wakes, reads the sensors, reports, and goes back to deep sleep as soon
+#     as Home Assistant has the readings (report_delay after it connects). awake_time
+#     is only a safety limit, for when Wi-Fi or Home Assistant can't be reached.
 
 substitutions:
   name: smart-sensor
   friendly_name: Smart Sensor
-  awake_time: 20s        # how long to stay awake each cycle
+  awake_time: 20s        # safety limit: longest the node stays awake each cycle
   sleep_time: 5min       # how long to sleep between readings
+  report_delay: 2s       # after Home Assistant connects, wait this long, then sleep
 
 esphome:
   name: ${name}
@@ -42,6 +45,9 @@ esphome:
             gpio_set_level(GPIO_NUM_18, 0);
             gpio_set_level(GPIO_NUM_3, 0);
             gpio_set_level(GPIO_NUM_14, 0);
+            // Give the sensors a moment to power up before I2C starts
+            // (the SHTC3 needs 240 us; some plug-in boards need a few ms).
+            delay(5);
   on_shutdown:
     # Runs as the node enters deep sleep, after the sensors have finished.
     - priority: -100
@@ -73,6 +79,9 @@ logger:
 api:
   encryption:
     key: !secret api_encryption_key
+  # Sleep as soon as Home Assistant has the readings instead of waiting for awake_time.
+  on_client_connected:
+    - script.execute: report_and_sleep
 
 ota:
   - platform: esphome
@@ -90,7 +99,8 @@ wifi:
   ap:
     ssid: "${name} Fallback"
     password: !secret fallback_ap_password
-  # A static IP shortens each wake-up further (optional):
+  # A static IP can shorten each wake-up, but one tester measured it as slower on
+  # their network (issue #1 of the original project), so measure before relying on it:
   # manual_ip:
   #   static_ip: 192.168.1.50
   #   gateway: 192.168.1.1
@@ -154,6 +164,20 @@ binary_sensor:
               - deep_sleep.prevent: deep_sleep_1
             else:
               - deep_sleep.allow: deep_sleep_1
+
+script:
+  - id: report_and_sleep
+    mode: single
+    then:
+      # Sensors read at boot; their values go to Home Assistant when it connects.
+      # The delay also lets Home Assistant send the stay-awake toggle's state.
+      - delay: ${report_delay}
+      - if:
+          condition:
+            not:
+              binary_sensor.is_on: stay_awake
+          then:
+            - deep_sleep.enter: deep_sleep_1
 
 deep_sleep:
   id: deep_sleep_1

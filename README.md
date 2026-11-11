@@ -40,6 +40,15 @@ The 18350 board keeps its original size and front layout; Q2 and the moved therm
 
 **Documentation**
 - **I2C note corrected:** the original note said pull-ups were missing. R9 and R10 are already in the design, on the switched sensor rail.
+- **Points from the original project's [issue #1](https://github.com/FeatureNAB/smart-sensor-battery-pack/issues/1) ("Missing Pull Up Resistor"):**
+  - *Pull-ups on the switched rail (3V_SW) vs. 3V3:* kept on 3V_SW on purpose. Pull-ups on the always-on 3V3 would push current into the SHTC3 through SDA/SCL while its supply is off (phantom powering). On 3V_SW, the pull-ups and the sensor are switched on and off together.
+  - *"The sensor has to be powered before the bus starts":* the firmware switches the sensor rail on at boot priority 1200, before I2C sets up (priority 1000), and waits 5 ms so the sensors are ready. No extra YAML is needed.
+  - *"Use the internal pull-ups instead":* not used. The ESP32-C6's internal pull-ups are about 45 kΩ, too weak to be reliable, and they would phantom-power the sensor during sleep. They are disabled.
+  - *Pull-up current:* none while the bus is idle (I2C is open-drain), and none at all while the rail is off.
+  - *Measured 380 µA asleep and a 3.45 s wake:* the firmware now sleeps 2 s after Home Assistant connects instead of staying awake a fixed 20 s, so a typical wake is about 3–6 s and uses roughly a quarter of the energy. See [Sleep current](#sleep-current) for how to measure.
+  - *Static IP slower for one tester:* the config now says to measure before relying on a static IP.
+  - *Edge.Cuts DRC errors:* the outlines of all three boards here are closed (checked: no open ends).
+  - *Larger + / − battery marks:* the holder footprints have small + and − marks on the back silkscreen. Reverse-battery protection (Q2) also protects the board if a cell goes in backwards.
 - **README rewritten:** board descriptions, comparison images, setup steps and known limitations.
 
 
@@ -286,7 +295,7 @@ Any 3.3 V I2C sensor breakout can plug into J3 or J5. It shares the bus with the
 | **VEML7700** | Light level, wide range | [`veml7700`](https://esphome.io/components/sensor/veml7700.html) | Excellent |
 | **TSL2591** | Light level, high dynamic range | [`tsl2591`](https://esphome.io/components/sensor/tsl2591.html) | Good |
 | **LTR390** | UV index and light | [`ltr390`](https://esphome.io/components/sensor/ltr390.html) | Good |
-| **SCD40 / SCD41** | CO₂ (true NDIR), temperature, humidity | [`scd4x`](https://esphome.io/components/sensor/scd4x.html) | Works, but set `measurement_mode: single_shot` (each reading takes about 5 s) and a longer `awake_time`. CO₂ sensors draw much more current than the others, so battery life drops noticeably |
+| **SCD40 / SCD41** | CO₂ (true NDIR), temperature, humidity | [`scd4x`](https://esphome.io/components/sensor/scd4x.html) | Works, but set `measurement_mode: single_shot` (each reading takes about 5 s) and a longer `report_delay` (about 7 s). CO₂ sensors draw much more current than the others, so battery life drops noticeably |
 | **BME680 / BME688** | Temperature, humidity, pressure, gas (VOC) | [`bme680`](https://esphome.io/components/sensor/bme680.html) | Temperature, humidity and pressure work well. The gas reading needs the sensor powered continuously to stabilize, so it's unreliable when the sensor is switched off between readings |
 | **SGP40 / SGP41, ENS160** | Air quality (VOC/NOx) | [`sgp4x`](https://esphome.io/components/sensor/sgp4x.html), [`ens160_i2c`](https://esphome.io/components/sensor/ens160.html) | Not recommended: they need continuous power and a warm-up period, which defeats deep sleep |
 
@@ -307,7 +316,7 @@ Any 3.3 V I2C sensor breakout can plug into J3 or J5. It shares the bus with the
 ## Firmware (ESPHome, XIAO ESP32-C6)
 A complete ESPHome config is in [`firmware/smart-sensor-xiao-esp32c6.yaml`](firmware/smart-sensor-xiao-esp32c6.yaml). It does the following:
 
-- **Deep sleep:** the node wakes, reads temperature, humidity and battery voltage, reports them, and sleeps again. By default it stays awake 20 s and sleeps 5 minutes; change `awake_time` and `sleep_time` at the top.
+- **Deep sleep:** the node wakes, reads temperature, humidity and battery voltage, reports them, and sleeps again. By default it goes back to sleep 2 s after Home Assistant connects (usually 3–6 s awake in total), sleeps 5 minutes, and never stays awake longer than 20 s; change `report_delay`, `sleep_time` and `awake_time` at the top.
 - **Sensor power sequencing:** GPIO18 is driven low at boot priority 1200, before I2C starts (priority 1000), so the sensor and its pull-ups are powered when the bus is set up.
 - **No phantom powering:** the ESP32-C6's internal I2C pull-ups are turned off. Just before deep sleep, SDA, SCL and GPIO18 are set to high-impedance with no pulls; R7 then switches the sensor rail off. Nothing can drive the sensor through its data pins while it is unpowered.
 - **Lower radio power:** Wi-Fi uses `fast_connect`, light power-save and 15 dB transmit power to shorten and cheapen each wake-up. The regulator handles full power if you need the range.
@@ -318,7 +327,7 @@ A complete ESPHome config is in [`firmware/smart-sensor-xiao-esp32c6.yaml`](firm
 ### Setting it up in Home Assistant
 1. **Install ESPHome:** add the ESPHome Device Builder add-on in Home Assistant (Settings → Add-ons), or use the `esphome` command line on your computer.
 2. **Add the secrets:** copy [`firmware/secrets.yaml.example`](firmware/secrets.yaml.example) to `secrets.yaml` and fill in your Wi-Fi details, an API encryption key, an OTA password and a fallback-hotspot password. In the Device Builder, open **Secrets** (top right) and paste the same keys there. `secrets.yaml` is ignored by git, so it won't be committed.
-3. **Add the device:** in the Device Builder choose **New device**, skip the wizard, and paste the contents of `smart-sensor-xiao-esp32c6.yaml` into the new device's file. You can change `name`, `awake_time` and `sleep_time` at the top.
+3. **Add the device:** in the Device Builder choose **New device**, skip the wizard, and paste the contents of `smart-sensor-xiao-esp32c6.yaml` into the new device's file. You can change `name`, `sleep_time`, `report_delay` and `awake_time` at the top.
 4. **First flash over USB:** plug the XIAO into your computer and choose **Install → Plug into this computer** (or run `esphome run smart-sensor-xiao-esp32c6.yaml`). Later updates can go over Wi-Fi.
 5. **Add the device to Home Assistant:** wake the sensor (press the XIAO's reset button, or turn on the stay-awake toggle from step 6 first) so it is online, then:
    - **If it's discovered:** go to **Settings → Devices & services**. A "Discovered: smart-sensor" card appears; click **Add**, enter the API encryption key from your `secrets.yaml`, and click **Submit**.
@@ -335,21 +344,25 @@ A complete ESPHome config is in [`firmware/smart-sensor-xiao-esp32c6.yaml`](firm
 The node appears with **Temperature**, **Humidity**, **Battery voltage** and **Battery level** entities. Because the config uses deep sleep, ESPHome tells Home Assistant it is a sleeping device, so Home Assistant keeps the last reading between wake-ups instead of marking the sensor unavailable.
 
 ### Adjusting the wake and sleep timing
-Each cycle, the node wakes, connects to Wi-Fi and Home Assistant, reads its sensors, and goes back to sleep. Two values at the top of `smart-sensor-xiao-esp32c6.yaml` control this:
+Each cycle, the node wakes, connects to Wi-Fi and Home Assistant, sends its readings, and goes back to sleep. Three values at the top of `smart-sensor-xiao-esp32c6.yaml` control this:
 
 ```yaml
 substitutions:
-  awake_time: 20s     # how long the node stays awake each cycle
+  awake_time: 20s     # safety limit: longest the node stays awake each cycle
   sleep_time: 5min    # how long it sleeps between cycles
+  report_delay: 2s    # after Home Assistant connects, wait this long, then sleep
 ```
 
-**When a sensor needs more time:** the node has to stay awake long enough to connect *and* finish the slowest reading. Connecting usually takes a few seconds; `fast_connect` and a static IP shorten it. A reading only gets sent if it finishes before the node sleeps, so if a sensor shows up as unknown or never updates, give it more time:
+**How a cycle ends:** the sensors take their first reading within a couple of seconds of boot, while Wi-Fi is still connecting. When Home Assistant connects, it receives those readings and the state of the stay-awake toggle. `report_delay` later the node sleeps, so a typical wake lasts about 3–6 s. `awake_time` only matters when Wi-Fi or Home Assistant can't be reached: the node then gives up and sleeps after 20 s instead of draining the battery.
 
-1. **Raise `awake_time`.** Rough rule: connection time (about 5–10 s) + the sensor's measurement time + 5 s of margin. For example, an SCD40/41 in `single_shot` mode takes about 5 s per reading, so use `awake_time: 30s`.
-2. **Make sure the sensor reads during that window.** Its `update_interval` must be shorter than `awake_time`; the provided config uses `5s`, so every sensor reads several times per wake. For a slow sensor, set its `update_interval` to at least its measurement time (for example `10s` for an SCD4x).
-3. **Sensors that need a warm-up after power-on:** the sensor rail switches on at the very start of boot, so the warm-up overlaps with the Wi-Fi connection. If a sensor needs longer than that, add the extra time to `awake_time`. Sensors that need minutes of warm-up (gas/VOC sensors) won't settle in a short wake window at all; see [Adding other sensors](#adding-other-sensors).
+**When a sensor needs more time:** a reading only gets sent if it finishes before the node sleeps. If a sensor shows up as unknown or never updates:
 
-**Sleeping as soon as the data is sent (saves battery):** instead of always staying awake for the full `awake_time`, you can send the node to sleep right after its slowest sensor reports. `awake_time` then works only as a safety limit. For example, with an SCD4x:
+1. **Raise `report_delay`** to cover the sensor's measurement time. For example, an SCD40/41 in `single_shot` mode takes about 5 s per reading, so use `report_delay: 7s`.
+2. **Raise `awake_time` too** if connection time + `report_delay` comes close to it. Rough rule: connection time (about 5–10 s) + `report_delay` + 5 s of margin.
+3. **Make sure the sensor reads during that window.** Its `update_interval` must be shorter than the time the node is awake; the provided config uses `5s`. For a slow sensor, set its `update_interval` to at least its measurement time (for example `10s` for an SCD4x).
+4. **Sensors that need a warm-up after power-on:** the sensor rail switches on at the very start of boot (5 ms before I2C starts), so most of the warm-up overlaps with the Wi-Fi connection. If a sensor needs longer, add the extra time to `report_delay`. Sensors that need minutes of warm-up (gas/VOC sensors) won't settle in a short wake window at all; see [Adding other sensors](#adding-other-sensors).
+
+**Sleeping right after one slow sensor reports (alternative):** instead of a fixed `report_delay`, you can sleep as soon as the slowest sensor has a value. Set `report_delay` long (say `30s`) and add:
 
 ```yaml
 sensor:
@@ -365,12 +378,14 @@ sensor:
 ```
 
 **Trade-offs:**
-- **Battery life** is roughly proportional to awake time ÷ total cycle time, because the ESP32-C6 draws tens of milliamps while awake (more while transmitting) and only microamps asleep. Doubling `awake_time` roughly doubles the energy per reading.
+- **Battery life** is roughly proportional to awake time ÷ total cycle time, because the ESP32-C6 draws tens of milliamps while awake (more while transmitting) and only microamps asleep. Halving the time awake roughly halves the energy per reading; this is why the node sleeps as soon as its readings are sent.
 - **A longer `sleep_time`** is the easiest way to extend battery life. 5 minutes suits temperature and humidity; 10–15 minutes is fine for slowly changing values; CO₂ in a busy room may want 2–5 minutes.
-- **Updating the firmware:** turn on the stay-awake toggle in Home Assistant first (see [Setting it up in Home Assistant](#setting-it-up-in-home-assistant)), or temporarily raise `awake_time`.
+- **Updating the firmware:** turn on the stay-awake toggle in Home Assistant first (see [Setting it up in Home Assistant](#setting-it-up-in-home-assistant)), or temporarily raise `report_delay` and `awake_time`.
 
 ### Sleep current
 While the XIAO sleeps, the board itself draws only a few microamps: the regulator about 2 µA, the protector about 4 µA, the charger's battery leakage about 1 µA and the divider 0.4 µA. The XIAO's own deep-sleep current comes on top; the ESP32-C6 chip alone is rated at 7 µA.
+
+**Measuring it yourself:** power the board from a source meter in place of the cell (for example a Nordic PPK2 in source mode, set to 3.7–4.0 V) and connect to the battery holder's + and − contacts. Unplug USB while measuring, because USB feeds the charger. Remove plug-in sensor boards that have their own power LED or regulator, because they add their own current. On the original board, one tester measured 380 µA asleep with a soil-moisture sensor attached, and 68 mA average (0.6 A peaks while transmitting) during a 3.45 s wake. If you measure far above the figures here, check the plug-in sensors first.
 
 ## Repository layout
 ```
