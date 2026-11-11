@@ -4279,6 +4279,15 @@
 				(hide yes)
 			)
 		)
+		(property "LCSC Part no." "C194656"
+			(at 181.61 46.99 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
 		(pin "2"
 			(uuid "1e711559-6ad7-42b3-a296-f40af16f390e")
 		)
