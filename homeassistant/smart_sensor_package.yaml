@@ -1,0 +1,14 @@
+# Home Assistant package for the Smart Sensor Battery Pack.
+#
+# Install: in configuration.yaml add
+#   homeassistant:
+#     packages:
+#       smart_sensor: !include packages/smart_sensor_package.yaml
+# and copy this file to <config>/packages/smart_sensor_package.yaml, then restart.
+#
+# It creates the "stay awake" toggle the sensor checks each time it wakes up.
+
+input_boolean:
+  smart_sensor_stay_awake:
+    name: Smart Sensor stay awake
+    icon: mdi:sleep-off

@@ -68,10 +68,15 @@ esp32:
 logger:
   level: INFO
 
+# Home Assistant connection. The key and password live in secrets.yaml
+# (copy secrets.yaml.example and fill it in).
 api:
+  encryption:
+    key: !secret api_encryption_key
 
 ota:
   - platform: esphome
+    password: !secret ota_password
 
 wifi:
   ssid: !secret wifi_ssid
@@ -81,6 +86,10 @@ wifi:
   # Lower transmit power saves battery. The RT9080 regulator handles full power
   # (about 354 mA peak on the ESP32-C6), so raise this if the signal is weak.
   output_power: 15dB
+  # Fallback hotspot if Wi-Fi is unreachable (only while awake).
+  ap:
+    ssid: "${name} Fallback"
+    password: !secret fallback_ap_password
   # A static IP shortens each wake-up further (optional):
   # manual_ip:
   #   static_ip: 192.168.1.50
@@ -128,6 +137,23 @@ sensor:
       if (isnan(v)) return NAN;
       float pct = (v - 3.3f) / (4.15f - 3.3f) * 100.0f;
       return pct < 0 ? 0 : (pct > 100 ? 100 : pct);
+
+# "Stay awake" switch from Home Assistant: turn on input_boolean.smart_sensor_stay_awake
+# (created by homeassistant/smart_sensor_package.yaml) to keep the node awake for
+# OTA updates or log viewing. It takes effect the next time the node wakes up.
+binary_sensor:
+  - platform: homeassistant
+    id: stay_awake
+    entity_id: input_boolean.smart_sensor_stay_awake
+    on_state:
+      then:
+        - if:
+            condition:
+              binary_sensor.is_on: stay_awake
+            then:
+              - deep_sleep.prevent: deep_sleep_1
+            else:
+              - deep_sleep.allow: deep_sleep_1
 
 deep_sleep:
   id: deep_sleep_1

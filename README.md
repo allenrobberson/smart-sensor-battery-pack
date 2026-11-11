@@ -56,7 +56,7 @@ For any variant, open its project in KiCad 9, press **B** to refill the copper z
 - **USB plugged in with a nearly empty cell.** When the XIAO runs from USB, its own regulator also drives 3.3 V. If the cell is below about 3.0 V at that moment, the RT9080's output sits slightly above its input, past its 0.3 V reverse rating. The original design had the same behaviour; it lasts only until the cell charges past 3 V.
 
 ## Firmware (ESPHome, XIAO ESP32-C6)
-A complete ESPHome config is in [`firmware/smart-sensor-xiao-esp32c6.yaml`](firmware/smart-sensor-xiao-esp32c6.yaml). Add your Wi-Fi details to `secrets.yaml`, then flash it. It does the following:
+A complete ESPHome config is in [`firmware/smart-sensor-xiao-esp32c6.yaml`](firmware/smart-sensor-xiao-esp32c6.yaml). It does the following:
 
 - **Deep sleep:** the node wakes, reads temperature, humidity and battery voltage, reports them, and sleeps again. By default it stays awake 20 s and sleeps 5 minutes; change `awake_time` and `sleep_time` at the top.
 - **Sensor power sequencing:** GPIO18 is driven low at boot priority 1200, before I2C starts (priority 1000), so the sensor and its pull-ups are powered when the bus is set up.
@@ -64,7 +64,23 @@ A complete ESPHome config is in [`firmware/smart-sensor-xiao-esp32c6.yaml`](firm
 - **Lower radio power:** Wi-Fi uses `fast_connect`, light power-save and 15 dB transmit power to shorten and cheapen each wake-up. The regulator handles full power if you need the range.
 - **Antenna:** the XIAO's RF switch is enabled with its built-in antenna selected. Set GPIO14 high in the boot lambda to use the U.FL connector.
 
-To update the firmware over the air, the node must be awake. Either catch it inside the 20 s window or temporarily raise `awake_time`.
+- **Stay-awake switch:** while `input_boolean.smart_sensor_stay_awake` is on in Home Assistant, the node skips deep sleep so you can update it over the air or watch its logs. It picks the change up the next time it wakes.
+
+### Setting it up in Home Assistant
+1. **Install ESPHome:** add the ESPHome Device Builder add-on in Home Assistant (Settings → Add-ons), or use the `esphome` command line on your computer.
+2. **Add the secrets:** copy [`firmware/secrets.yaml.example`](firmware/secrets.yaml.example) to `secrets.yaml` and fill in your Wi-Fi details, an API encryption key, an OTA password and a fallback-hotspot password. In the Device Builder, open **Secrets** (top right) and paste the same keys there. `secrets.yaml` is ignored by git, so it won't be committed.
+3. **Add the device:** in the Device Builder choose **New device**, skip the wizard, and paste the contents of `smart-sensor-xiao-esp32c6.yaml` into the new device's file. You can change `name`, `awake_time` and `sleep_time` at the top.
+4. **First flash over USB:** plug the XIAO into your computer and choose **Install → Plug into this computer** (or run `esphome run smart-sensor-xiao-esp32c6.yaml`). Later updates can go over Wi-Fi.
+5. **Add it to Home Assistant:** it shows up under Settings → Devices & Services as a discovered ESPHome device. Click **Configure** and enter the same API encryption key.
+6. **Add the stay-awake toggle:** copy [`homeassistant/smart_sensor_package.yaml`](homeassistant/smart_sensor_package.yaml) to `<config>/packages/` and add this to `configuration.yaml`, then restart Home Assistant:
+   ```yaml
+   homeassistant:
+     packages:
+       smart_sensor: !include packages/smart_sensor_package.yaml
+   ```
+   To update the firmware later, turn the toggle on, wait for the sensor's next wake-up, install the update, then turn the toggle off.
+
+The node appears with **Temperature**, **Humidity**, **Battery voltage** and **Battery level** entities. While it sleeps, Home Assistant shows them as unavailable between reports; that is normal for a deep-sleep device.
 
 ### Sleep current
 While the XIAO sleeps, the board itself draws only a few microamps: the regulator about 2 µA, the protector about 4 µA, the charger's battery leakage about 1 µA and the divider 0.4 µA. The XIAO's own deep-sleep current comes on top; the ESP32-C6 chip alone is rated at 7 µA.
@@ -78,7 +94,8 @@ Library.pretty/                footprints for all three boards
 variants/18650/                18650 board (KiCad project)
 variants/21700/                21700 board (KiCad project)
 tools/make_variant.py          generates the variant boards from the master
-firmware/                      ESPHome config for the XIAO ESP32-C6
+firmware/                      ESPHome config and secrets template for the XIAO ESP32-C6
+homeassistant/                 Home Assistant package (stay-awake toggle)
 docs/images/                   board previews used in this README
 ```
 
