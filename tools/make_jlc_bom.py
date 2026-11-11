@@ -50,9 +50,15 @@ def main():
         rows.append(dict(ref=ref, value=P.get('Value', ''), fp=unq(fp[1]).split(':')[-1], lcsc=lcsc,
                          x=x, y=-y, side=side, rot=rot % 360))
     os.makedirs(out, exist_ok=True)
-    groups = {}
+    # One BOM line per LCSC part: JLCPCB rejects several lines matched to the same part
+    # (e.g. the three 1x7 sockets, whose names and pin-1 side differ).
+    byp = {}
     for r in rows:
-        groups.setdefault((r['value'], r['fp'], r['lcsc']), []).append(r['ref'])
+        byp.setdefault(r['lcsc'], []).append(r)
+    groups = {}
+    for lcsc, rs in byp.items():
+        vals = sorted({r['value'] for r in rs}); fps = sorted({r['fp'] for r in rs})
+        groups[(' / '.join(vals), fps[0] if len(fps) == 1 else fps[0].split('_P')[0] + '_P' + fps[0].split('_P', 1)[1].split('_Pin1')[0], lcsc)] = [r['ref'] for r in rs]
     key = lambda s: (''.join(c for c in s if c.isalpha()), int(''.join(c for c in s if c.isdigit()) or 0))
     with open(os.path.join(out, '%s-BOM.csv' % name), 'w', newline='') as f:
         w = csv.writer(f); w.writerow(['Comment', 'Designator', 'Footprint', 'LCSC Part #'])
