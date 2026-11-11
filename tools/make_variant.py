@@ -142,6 +142,12 @@ def pad_sexp(p, flip, fp_angle, nets):
             f(p['x']), f(sy * p['y']), f(ang), f(p['w']), f(p['h']), f(p['drill']), uid())
     side = 'B' if flip else 'F'
     net = ''
+    if p['kind'] == 'thru_hole':
+        if nets:
+            n = nets[p['name']]; net = ' (net %s "%s") (pintype "passive")' % n
+        return ('\t\t(pad "%s" thru_hole %s (at %s %s %s) (size %s %s) (drill %s) (layers "*.Cu" "*.Mask")%s '
+                '(uuid %s))\n') % (p['name'], p['shape'], f(p['x']), f(sy * p['y']), f(ang),
+                                   f(p['w']), f(p['h']), f(p['drill']), net, uid())
     if nets:
         n = nets[p['name']]; net = ' (net %s "%s") (pintype "passive")' % n
     return ('\t\t(pad "%s" smd %s (at %s %s %s) (size %s %s) (layers "%s.Cu" "%s.Mask" "%s.Paste")%s '
@@ -175,16 +181,17 @@ def copper_features(board_tree, skip_ref='BT1'):
         for pd in find(fp, 'pad'):
             pa = first(pd, 'at'); sz = first(pd, 'size')
             x, y = xf(fx, fy, fa, float(pa[1]), float(pa[2]))
-            feats.append(('%s pad %s' % (ref, unq(pd[1])), x, y, math.hypot(float(sz[1]), float(sz[2])) / 2))
+            n = first(pd, 'net')
+            feats.append(('%s pad %s' % (ref, unq(pd[1])), x, y, math.hypot(float(sz[1]), float(sz[2])) / 2, n[1] if n else None))
     for v in find(board_tree, 'via'):
-        a = first(v, 'at'); feats.append(('via', float(a[1]), float(a[2]), float(first(v, 'size')[1]) / 2))
+        a = first(v, 'at'); feats.append(('via', float(a[1]), float(a[2]), float(first(v, 'size')[1]) / 2, first(v, 'net')[1]))
     for s in find(board_tree, 'segment'):
         a = first(s, 'start'); b = first(s, 'end'); w = float(first(s, 'width')[1])
         x1, y1, x2, y2 = map(float, (a[1], a[2], b[1], b[2]))
         n = max(2, int(math.hypot(x2 - x1, y2 - y1) / 0.1))
         for i in range(n + 1):
             feats.append(('%s trace (%s,%s)-(%s,%s)' % (unq(first(s, 'layer')[1]), x1, y1, x2, y2),
-                          x1 + (x2 - x1) * i / n, y1 + (y2 - y1) * i / n, w / 2))
+                          x1 + (x2 - x1) * i / n, y1 + (y2 - y1) * i / n, w / 2, first(s, 'net')[1]))
     return feats
 
 # --------------------------------------------------------------------- main
@@ -206,7 +213,7 @@ def main():
     fpath = os.path.abspath(a.footprint)
     libname = os.path.splitext(os.path.basename(fpath))[0]
     raw = parse(open(fpath).read())
-    smd = [unq(p[1]) for p in find(raw, 'pad') if p[2] == 'smd']
+    smd = [unq(p[1]) for p in find(raw, 'pad') if p[2] != 'np_thru_hole']
     pos_name = a.pos_pad or ('P' if 'P' in smd else '1')
     neg_name = a.neg_pad or ('N' if 'N' in smd else '2')
     gfx, pads, model = load_holder(fpath, pos_name, neg_name)
@@ -238,12 +245,13 @@ def main():
     cy = a.neg_y - ny
     pos_xy = board_xy(fa, cx, cy, P)
     neg_xy = board_xy(fa, cx, cy, N)
-    pad_extent_top = min(board_xy(fa, cx, cy, p)[1] - (p['w'] if abs((p['a'] + fa) % 180) == 90 else p['h']) / 2
-                         for p in pads if p['kind'] == 'smd')
     # pad long axis is along the board (local x -> board y)
     pad_extent_top = pos_xy[1] - P['w'] / 2
-    new_top = round(min(TOP_Y, pad_extent_top - EDGE_MARGIN), 2)
-    neg_bottom = neg_xy[1] + N['w'] / 2
+    fab_x = [abs(pt[0]) for k, l, w, pts in gfx if l == 'F.Fab' for key, pt in pts.items() if key != 'pts']
+    body_half = max(fab_x) if fab_x else 0.0
+    body_top = cy - body_half
+    new_top = round(min(TOP_Y, pad_extent_top - EDGE_MARGIN, body_top - EDGE_MARGIN), 2)
+    neg_bottom = max(neg_xy[1] + N['w'] / 2 if N['kind'] == 'smd' else 0, cy + body_half)
 
     src = open(os.path.join(ROOT, PCB)).read()
     tree = parse(src)
@@ -366,17 +374,22 @@ def main():
     print('  board outline: x %.2f..%.2f  y %.2f..%.2f  (%.1f x %.1f mm)' % (
         LEFT_X, right, new_top, BOTTOM_Y, right - LEFT_X, BOTTOM_Y - new_top))
     if neg_bottom > BOTTOM_Y:
-        print('  note: BAT- pad overhangs the bottom edge by %.2f mm (the 18350 board overhangs its BAT+ pad by 0.95 mm)' % (neg_bottom - BOTTOM_Y))
+        print('  note: holder pad/body overhangs the bottom edge by %.2f mm (the 18350 board overhangs its BAT+ pad by 0.95 mm)' % (neg_bottom - BOTTOM_Y))
     ok = True
     for p in pads:
-        if p['kind'] != 'np_thru_hole': continue
+        if p['kind'] not in ('np_thru_hole', 'thru_hole'): continue
         x, y = board_xy(fa, cx, cy, p)
-        r = p['drill'] / 2
-        hits = sorted({d for d, fx, fy, fr in feats if math.hypot(fx - x, fy - y) < r + fr + a.hole_clearance})
+        r = p['drill'] / 2 if p['kind'] == 'np_thru_hole' else max(p['w'], p['h']) / 2
+        if p['kind'] == 'thru_hole':
+            # same-net copper is fine for the battery lugs; only report other nets' features nearby
+            pass
+        own = nets[p['name']][0] if p['kind'] == 'thru_hole' else None  # same-net copper is fine for a lug
+        hits = sorted({d for d, fx, fy, fr, fn in feats if fn != own and math.hypot(fx - x, fy - y) < r + fr + a.hole_clearance})
         edge = min(x - LEFT_X, right - x, y - new_top, BOTTOM_Y - y) - r
         status = 'ok' if not hits and edge > 0.3 else 'CLASH'
         ok &= status == 'ok'
-        print('  locating hole d%.2f at (%.2f, %.2f): %s %s' % (p['drill'], x, y, status, '; '.join(hits)))
+        what = 'locating hole d%.2f' % p['drill'] if p['kind'] == 'np_thru_hole' else 'through-hole lug %s (pad d%.2f)' % (p['name'], max(p['w'], p['h']))
+        print('  %s at (%.2f, %.2f): %s %s' % (what, x, y, status, '; '.join(hits)))
     if not ok:
         print('  -> move the holder with --neg-y or reroute the listed traces.')
     print('Open the project in KiCad, press B to refill zones, then run DRC.')
