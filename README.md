@@ -269,6 +269,41 @@ A complete ESPHome config is in [`firmware/smart-sensor-xiao-esp32c6.yaml`](firm
 
 The node appears with **Temperature**, **Humidity**, **Battery voltage** and **Battery level** entities. Because the config uses deep sleep, ESPHome tells Home Assistant it is a sleeping device, so Home Assistant keeps the last reading between wake-ups instead of marking the sensor unavailable.
 
+### Adjusting the wake and sleep timing
+Each cycle, the node wakes, connects to Wi-Fi and Home Assistant, reads its sensors, and goes back to sleep. Two values at the top of `smart-sensor-xiao-esp32c6.yaml` control this:
+
+```yaml
+substitutions:
+  awake_time: 20s     # how long the node stays awake each cycle
+  sleep_time: 5min    # how long it sleeps between cycles
+```
+
+**When a sensor needs more time:** the node has to stay awake long enough to connect *and* finish the slowest reading. Connecting usually takes a few seconds; `fast_connect` and a static IP shorten it. A reading only gets sent if it finishes before the node sleeps, so if a sensor shows up as unknown or never updates, give it more time:
+
+1. **Raise `awake_time`.** Rough rule: connection time (about 5–10 s) + the sensor's measurement time + 5 s of margin. For example, an SCD40/41 in `single_shot` mode takes about 5 s per reading, so use `awake_time: 30s`.
+2. **Make sure the sensor reads during that window.** Its `update_interval` must be shorter than `awake_time`; the provided config uses `5s`, so every sensor reads several times per wake. For a slow sensor, set its `update_interval` to at least its measurement time (for example `10s` for an SCD4x).
+3. **Sensors that need a warm-up after power-on:** the sensor rail switches on at the very start of boot, so the warm-up overlaps with the Wi-Fi connection. If a sensor needs longer than that, add the extra time to `awake_time`. Sensors that need minutes of warm-up (gas/VOC sensors) won't settle in a short wake window at all; see [Adding other sensors](#adding-other-sensors).
+
+**Sleeping as soon as the data is sent (saves battery):** instead of always staying awake for the full `awake_time`, you can send the node to sleep right after its slowest sensor reports. `awake_time` then works only as a safety limit. For example, with an SCD4x:
+
+```yaml
+sensor:
+  - platform: scd4x
+    measurement_mode: single_shot
+    update_interval: 10s
+    co2:
+      name: CO2
+      on_value:
+        then:
+          - delay: 2s                      # let the value reach Home Assistant
+          - deep_sleep.enter: deep_sleep_1
+```
+
+**Trade-offs:**
+- **Battery life** is roughly proportional to awake time ÷ total cycle time, because the ESP32-C6 draws tens of milliamps while awake (more while transmitting) and only microamps asleep. Doubling `awake_time` roughly doubles the energy per reading.
+- **A longer `sleep_time`** is the easiest way to extend battery life. 5 minutes suits temperature and humidity; 10–15 minutes is fine for slowly changing values; CO₂ in a busy room may want 2–5 minutes.
+- **Updating the firmware:** turn on the stay-awake toggle in Home Assistant first (see [Setting it up in Home Assistant](#setting-it-up-in-home-assistant)), or temporarily raise `awake_time`.
+
 ### Sleep current
 While the XIAO sleeps, the board itself draws only a few microamps: the regulator about 2 µA, the protector about 4 µA, the charger's battery leakage about 1 µA and the divider 0.4 µA. The XIAO's own deep-sleep current comes on top; the ESP32-C6 chip alone is rated at 7 µA.
 
