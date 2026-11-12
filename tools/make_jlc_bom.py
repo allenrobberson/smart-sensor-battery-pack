@@ -27,6 +27,7 @@ ROTATION_FIX = {
     'SOT-23-6': 180,   # U2
     'SOT-23': 180,     # Q1, Q2
     'Sensirion_DFN-4-1EP_2x2mm_P1mm_EP0.7x1.6mm': 270,   # U7 SHTC3
+    'CSD85301Q2': 270,  # U6: JLC's C544396 footprint has the pins in rows (pin 1 bottom-left at 0 deg); KiCad's are in columns
 }
 
 

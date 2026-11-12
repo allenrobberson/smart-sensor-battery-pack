@@ -168,11 +168,11 @@ Every part except the battery holder uses a JLCPCB/LCSC part number:
 Things to know before ordering assembly:
 - **Battery holder:** BT1 is not in the BOM, so buy it separately and solder it yourself (see [Battery holders](#battery-holders) below).
 - **Extended parts:** most of the ICs are JLCPCB "extended" parts, which carry a small one-time loading fee each. Stock changes, so the quote page will flag anything that has run out.
-- **Rotations are already corrected:** the CPL files include JLCPCB's zero-angle offsets for the sockets, SOT-23, SOT-23-5, SOT-23-6 and SHTC3 parts (see `ROTATION_FIX` in `tools/make_jlc_bom.py`), checked part by part in JLCPCB's placement preview. One exception is U6 (CSD85301Q2), where JLCPCB shows a generic WSON6 model whose pin-1 marker can't be lined up. The CPL keeps the board's orientation (pin 1 at the silkscreen dot, bottom-right), so add an assembly remark asking JLCPCB to confirm U6's pin 1.
+- **Rotations are already corrected:** the CPL files include JLCPCB's zero-angle offsets for the sockets, SOT-23, SOT-23-5, SOT-23-6, SHTC3 and CSD85301Q2 parts (see `ROTATION_FIX` in `tools/make_jlc_bom.py`). Every part was checked in JLCPCB's placement preview: each IC's pin-1 marker sits at the board's pin-1 mark and its leads on the pads. All four boards share identical front-side pads and placement data, so the check covers all of them. **U6 (CSD85301Q2) needs 90°, not 180°:** JLCPCB's library footprint for C544396 has the pins in rows with pin 1 bottom-left, while the KiCad footprint has them in columns. The first CPL files (used for the November 2026 order of the 18350/18650/21700 boards) had U6 at 180°, which turns the part 90° on its pads. This was fixed on 12 November 2026; if you downloaded the assembly files before then, download them again.
 - **The XIAO:** it plugs into the sockets and isn't part of the order.
 
 #### Tested JLCPCB order settings (November 2026)
-The 18350, 18650 and 21700 files in `gerbers/` and `assembly/` are exactly the ones uploaded for a real order of those three boards. The universal board's files were uploaded with the same settings and quoted at **$72.87** for 5 assembled boards ($5.10 PCB + $67.77 assembly); all 19 parts matched and were in stock, and JLCPCB's preview showed its slotted holes correctly. These settings went through without errors:
+The 18350, 18650 and 21700 files in `gerbers/` and `assembly/` are exactly the ones uploaded for a real order of those three boards. The universal board's files were uploaded with the same settings and quoted at **$73.82** for 5 assembled boards ($5.10 PCB + $68.72 assembly, including $0.91 nitrogen reflow); all 19 parts matched and were in stock, and JLCPCB's preview showed its slotted holes correctly. These settings went through without errors:
 
 | Setting | Value | Why |
 |---------|-------|-----|
@@ -182,7 +182,7 @@ The 18350, 18650 and 21700 files in `gerbers/` and `assembly/` are exactly the o
 | Assembly side | Top | BT1 on the back is soldered by hand |
 | Tooling holes | Added by JLCPCB | Default |
 | Product description | Sensor\Controller\Precision Instrument / Temperature Sensor | Needed for customs |
-| Assembly remark | "Please confirm pin 1 orientation of U6 (CSD85301Q2, LCSC C544396): pin 1 must be at the silkscreen dot (bottom-right corner of U6)." | The preview's generic model can't show U6's pin 1 (see above). The **Assembly Remark** box doesn't always appear (it was missing on the universal board's order page); if it's absent, raise the note during **File Review** in your order history after checkout. Don't put it in the 200-character **PCB Remark** box, which goes to the board factory, not assembly. |
+| Assembly remark | (optional) "Please confirm pin 1 of U6 (CSD85301Q2, C544396) is at the silkscreen dot, bottom-right of U6." | A second check on the one part whose rotation had to be corrected. The **Assembly Remark** box doesn't always appear; if it's missing, raise it during **File Review** in your order history. Don't use the 200-character **PCB Remark** box, which goes to the board factory, not assembly. |
 
 Quoted price for 5 assembled boards, before shipping and coupons:
 
@@ -207,7 +207,7 @@ Assembly breakdown (Economic PCBA, 5 boards):
 | **Per order** | **$73.84** | **$76.94** | **$76.94** |
 | **Per assembled board** | **$14.77** | **$15.39** | **$15.39** |
 
-Universal board (quoted the same way): $5.10 PCB + $67.77 assembly = **$72.87** for 5 assembled boards ($14.57 each). It has the same extended-part fees as the 18350; this quote had no nitrogen-reflow line.
+Universal board (quoted the same way): $5.10 PCB + $68.72 assembly = **$73.82** for 5 assembled boards ($14.76 each), the same extended-part fees as the 18350.
 
 The 18350 has one fewer extended part than the other two (its R1, C25862, is a basic part), so its fee is lower.
 
