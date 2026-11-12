@@ -1,0 +1,23 @@
+(footprint "BatteryHolder_Universal_18350_18650_21700"
+	(version 20241229)
+	(generator "pcbnew")
+	(generator_version "9.0")
+	(layer "B.Cu")
+	(descr "Universal pads for a Keystone 1096 (18350), 1042 (18650) or 1121 (21700) holder, back side")
+	(property "Reference" "BT1" (at 0 0 0) (layer "B.SilkS") (uuid "6b8e6ab8-2cf7-4962-a28b-e1b76c50d318") (effects (font (size 1 1) (thickness 0.15)) (justify mirror)))
+	(property "Value" "BatteryHolder_Universal_18350_18650_21700" (at 0 2 0) (layer "B.Fab") (uuid "c57844f8-5b31-4d24-b12b-ccffc3035fff") (effects (font (size 1 1) (thickness 0.15)) (justify mirror)))
+
+	(attr smd)
+	(pad "P" smd rect (at -1 -39.08) (size 6.35 7.34) (layers "B.Cu" "B.Mask" "B.Paste") (pintype "passive") (uuid "574ecdcd-ce14-4e78-8e01-4ff8f3631d52"))
+	(pad "P" smd rect (at -1 -8.38) (size 6.35 7.34) (layers "B.Cu" "B.Mask" "B.Paste") (pintype "passive") (uuid "ae02c439-f32f-433d-b8e0-d6268c415809"))
+	(pad "N" smd rect (at -1 38.705) (size 6.35 7.99) (layers "B.Cu" "B.Mask" "B.Paste") (pintype "passive") (uuid "2dead50e-6c59-41c8-8c06-df9adaa0e638"))
+	(pad "P" thru_hole circle (at 0 -38.28) (size 2.8 2.8) (drill 1.7) (layers "*.Cu" "*.Mask") (pintype "passive") (uuid "51ac831d-4f3f-4ef5-8de7-8b8189f3a849"))
+	(pad "N" thru_hole circle (at 0 38.38) (size 2.8 2.8) (drill 1.7) (layers "*.Cu" "*.Mask") (pintype "passive") (uuid "ebe686b1-1e0b-43ce-bb3f-95de3110c8e0"))
+	(pad "" np_thru_hole oval (at -9 -36.98) (size 2.4 4.99) (drill oval 2.4 4.99) (layers "*.Cu" "*.Mask") (uuid "07f1d26c-bc93-4721-bf90-ea6e001a9a24"))
+	(pad "" np_thru_hole circle (at -9 -4.88) (size 2.39 2.39) (drill 2.39) (layers "*.Cu" "*.Mask") (uuid "0209bde6-b08e-472b-88d8-f14557d6e71a"))
+	(pad "" np_thru_hole oval (at -9 29.045) (size 3.55 5.94) (drill oval 3.55 5.94) (layers "*.Cu" "*.Mask") (uuid "bdaff62e-7bd8-47af-95e1-c627a371ee7d"))
+	(pad "" np_thru_hole circle (at 7 -0.24) (size 3.45 3.45) (drill 3.45) (layers "*.Cu" "*.Mask") (uuid "99d0d32e-9be8-47d0-b874-e8172d137c14"))
+	(pad "" np_thru_hole oval (at 8 -27.55) (size 6 4) (drill oval 6 4) (layers "*.Cu" "*.Mask") (uuid "41f7c68b-ddad-4ef4-a79a-d53146ada0a9"))
+	(fp_rect (start -11.75 -43) (end 11.75 42.75) (stroke (width 0.05) (type solid)) (fill no) (layer "B.CrtYd") (uuid "dcc21fc7-2707-48fd-b32e-74e8be34e061"))
+
+)

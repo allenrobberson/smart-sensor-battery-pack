@@ -86,6 +86,7 @@ All three boards share the same schematic and the same front-side parts and rout
 | 18350 | Keystone 1096 | Surface mount | 23 x 56 mm | repository root (original design) |
 | 18650 | Keystone 1042 | Surface mount | 23 x 86.25 mm | `variants/18650/` |
 | 21700 | Keystone 1121 (fits 20700 and 21700) | Through-hole solder lugs | 24 x 84.55 mm | `variants/21700/` |
+| **Universal** | Keystone 1096, 1042 **or** 1121 | SMD pads + lug holes for all three | 24 x 86.25 mm | `variants/universal/` |
 
 ### 18350
 The original, most compact design. The Keystone 1096 holder covers the whole back of the board.
@@ -104,6 +105,19 @@ The footprint was drawn from Keystone drawing 1121 rev A. The lug holes are dril
 
 ![21700 board, front and back](docs/images/board_21700.png)
 
+### Universal (18350, 18650 and 21700 on one board)
+One board that takes any of the three holders, so you can order a single design and choose the cell later. It is the 21700 board lengthened to 86.25 mm (the 1042's length), 24 mm wide.
+
+![Universal board: front, back, and where each holder sits](docs/images/board_universal.png)
+
+- **BAT- end (bottom):** one larger SMD pad covers both the 1096 and the 1042 contact, with the 1121's plated lug hole in the middle of it. All three holders' − contacts land here.
+- **BAT+ end (top):** the + pad for the 1042 (18650) sits at the top edge, with the 1121's (21700) lug hole inside it. A second + pad for the 1096 (18350) sits 30.7 mm further down. The two are joined by the BAT+ trace on the back, under solder mask, so there is no long strip of bare battery copper. The back silkscreen shows which + pad belongs to which cell (`18650 21700` and `18350`), plus large + and − marks.
+- **Locating holes:** every holder's pegs have a hole. Where two holders' pegs overlap, the holes are merged into slots: one small and one large slot on the left, and one large slot on the right. All holes keep at least 0.3 mm from copper.
+- **Charge current:** R1 is **1 kΩ (about 540 mA)**, LCSC C11702, a basic part. That's under 0.5C for a 1100 mAh 18350 and still charges a 4500 mAh 21700 inside the charger's 10-hour safety timer. With a 5000 mAh cell charged from empty, the timer can stop the charge just before it finishes; unplugging and replugging USB restarts it. For an 18650/21700-only build, you can fit 910 Ω (C44933) instead.
+- **Soldering the holder:** for the 1096 or 1042, solder the contacts to the pads; the small lug holes under them just fill with solder. For the 1121, solder its lugs from the front as on the 21700 board. Only fit one holder.
+
+The front side, parts and routing are the same as the other three boards, so the same firmware and BOM apply. The only BOM difference is R1. The board and its files were made by `tools/make_universal.py` and checked for shorts and broken connections.
+
 ## Ordering boards (Gerber files)
 Ready-to-upload Gerber zips for all three boards are in [`gerbers/`](gerbers):
 
@@ -112,6 +126,7 @@ Ready-to-upload Gerber zips for all three boards are in [`gerbers/`](gerbers):
 | 18350 | [`gerbers/SSB-18350-gerbers.zip`](gerbers/SSB-18350-gerbers.zip) | 23 x 56 mm |
 | 18650 | [`gerbers/SSB-18650-gerbers.zip`](gerbers/SSB-18650-gerbers.zip) | 23 x 86.25 mm |
 | 21700 | [`gerbers/SSB-21700-gerbers.zip`](gerbers/SSB-21700-gerbers.zip) | 24 x 84.55 mm |
+| Universal | [`gerbers/SSB-UNIVERSAL-gerbers.zip`](gerbers/SSB-UNIVERSAL-gerbers.zip) | 24 x 86.25 mm |
 
 **To order at JLCPCB:** upload a zip on the quote page and keep the defaults: 2 layers, 1.6 mm FR-4, 1 oz copper. Choose any solder-mask colour. If you want JLCPCB to assemble the parts, pick **LeadFree HASL** so the cheaper Economic assembly is allowed (see [Tested JLCPCB order settings](#tested-jlcpcb-order-settings-november-2026)). Each zip holds both copper layers, solder mask, paste, silkscreen, the board outline, and plated and non-plated drill files.
 
@@ -127,6 +142,7 @@ To have JLCPCB solder the parts, choose **PCB Assembly** (top side) on the quote
 | 18350 | [`SSB-18350-BOM.csv`](assembly/SSB-18350-BOM.csv) | [`SSB-18350-CPL.csv`](assembly/SSB-18350-CPL.csv) |
 | 18650 | [`SSB-18650-BOM.csv`](assembly/SSB-18650-BOM.csv) | [`SSB-18650-CPL.csv`](assembly/SSB-18650-CPL.csv) |
 | 21700 | [`SSB-21700-BOM.csv`](assembly/SSB-21700-BOM.csv) | [`SSB-21700-CPL.csv`](assembly/SSB-21700-CPL.csv) |
+| Universal | [`SSB-UNIVERSAL-BOM.csv`](assembly/SSB-UNIVERSAL-BOM.csv) | [`SSB-UNIVERSAL-CPL.csv`](assembly/SSB-UNIVERSAL-CPL.csv) |
 
 Every part except the battery holder uses a JLCPCB/LCSC part number:
 
@@ -433,7 +449,9 @@ Library.pretty/                footprints for all three boards
 3d_models/                     3D models
 variants/18650/                18650 board (KiCad project)
 variants/21700/                21700 board (KiCad project)
+variants/universal/            universal board: 18350, 18650 or 21700 holder (KiCad project)
 tools/make_variant.py          generates the variant boards from the master
+tools/make_universal.py        generates the universal board from the 21700 variant
 tools/make_gerbers.py          writes Gerber and drill files without KiCad
 tools/make_jlc_bom.py          writes JLCPCB BOM and placement files
 firmware/                      ESPHome config and secrets template for the XIAO ESP32-C6
@@ -454,6 +472,7 @@ python3 tools/make_variant.py --name 18650 \
 python3 tools/make_variant.py --name 21700 \
     --footprint Library.pretty/BatteryHolder_Keystone_1121_1x21700.kicad_mod \
     --value 1121 --mpn "Keystone 1121" --cell 21700 --set R1=910
+python3 tools/make_universal.py   # universal board, built from variants/21700
 ```
 
 The script swaps the holder, resizes the outline, extends the battery traces, stretches the ground pours and updates BT1 in the schematic. `--set REF=VALUE` overrides a part value in that variant; the larger cells use it to raise the charge current. It also reports any holder hole that would land on existing copper; use `--neg-y` to slide the holder along the board if one does. To add another cell size, point `--footprint` at that holder's KiCad footprint.
