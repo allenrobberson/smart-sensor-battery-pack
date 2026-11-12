@@ -117,7 +117,9 @@ One board that takes any of the three holders, so you can order a single design 
 - **Charge current:** R1 is **1 kΩ (about 540 mA)**, LCSC C11702, a basic part. That's under 0.5C for a 1100 mAh 18350 and still charges a 4500 mAh 21700 inside the charger's 10-hour safety timer. With a 5000 mAh cell charged from empty, the timer can stop the charge just before it finishes; unplugging and replugging USB restarts it. For an 18650/21700-only build, you can fit 910 Ω (C44933) instead.
 - **Soldering the holder:** for the 1096 or 1042, solder the contacts to the pads; the small lug holes under them just fill with solder. For the 1121, solder its lugs from the front as on the 21700 board. Only fit one holder.
 
-The front side, parts and routing are the same as the other three boards, so the same firmware and BOM apply. The only BOM difference is R1. The board and its files were made by `tools/make_universal.py` and checked for shorts and broken connections.
+The front side, parts and routing are the same as the other three boards, so the same firmware and BOM apply. The only BOM difference is R1. The board and its files were made by `tools/make_universal.py`.
+
+**What has been checked:** the Gerbers have no shorts or broken nets; every hole and slot keeps at least 0.3 mm from other-net copper; no copper is within 0.25 mm of the board edge; and JLCPCB accepted the files, matched all 19 parts and showed the slots correctly. **Not yet checked:** a KiCad DRC run (open `variants/universal/` in KiCad, press B to refill zones, then run DRC) and a physical test-fit of each holder. Check the peg slots against a real holder before ordering in quantity.
 
 ## Ordering boards (Gerber files)
 Ready-to-upload Gerber zips for all four boards are in [`gerbers/`](gerbers):
@@ -170,7 +172,7 @@ Things to know before ordering assembly:
 - **The XIAO:** it plugs into the sockets and isn't part of the order.
 
 #### Tested JLCPCB order settings (November 2026)
-The 18350, 18650 and 21700 files in `gerbers/` and `assembly/` are exactly the ones uploaded for a real order of those three boards. The universal board's files use the same settings but haven't been quoted yet; expect about the same price as the 18350 (R1 is a basic part on both, so they have the same extended-part fees). These settings went through without errors:
+The 18350, 18650 and 21700 files in `gerbers/` and `assembly/` are exactly the ones uploaded for a real order of those three boards. The universal board's files were uploaded with the same settings and quoted at **$72.87** for 5 assembled boards ($5.10 PCB + $67.77 assembly); all 19 parts matched and were in stock, and JLCPCB's preview showed its slotted holes correctly. These settings went through without errors:
 
 | Setting | Value | Why |
 |---------|-------|-----|
@@ -180,7 +182,7 @@ The 18350, 18650 and 21700 files in `gerbers/` and `assembly/` are exactly the o
 | Assembly side | Top | BT1 on the back is soldered by hand |
 | Tooling holes | Added by JLCPCB | Default |
 | Product description | Sensor\Controller\Precision Instrument / Temperature Sensor | Needed for customs |
-| Assembly remark | "Please confirm pin 1 orientation of U6 (CSD85301Q2, LCSC C544396): pin 1 must be at the silkscreen dot (bottom-right corner of U6)." | The preview's generic model can't show U6's pin 1 (see above) |
+| Assembly remark | "Please confirm pin 1 orientation of U6 (CSD85301Q2, LCSC C544396): pin 1 must be at the silkscreen dot (bottom-right corner of U6)." | The preview's generic model can't show U6's pin 1 (see above). The **Assembly Remark** box doesn't always appear (it was missing on the universal board's order page); if it's absent, raise the note during **File Review** in your order history after checkout. Don't put it in the 200-character **PCB Remark** box, which goes to the board factory, not assembly. |
 
 Quoted price for 5 assembled boards, before shipping and coupons:
 
@@ -205,19 +207,23 @@ Assembly breakdown (Economic PCBA, 5 boards):
 | **Per order** | **$73.84** | **$76.94** | **$76.94** |
 | **Per assembled board** | **$14.77** | **$15.39** | **$15.39** |
 
+Universal board (quoted the same way): $5.10 PCB + $67.77 assembly = **$72.87** for 5 assembled boards ($14.57 each). It has the same extended-part fees as the 18350; this quote had no nitrogen-reflow line.
+
 The 18350 has one fewer extended part than the other two (its R1, C25862, is a basic part), so its fee is lower.
 
-All three boards in one checkout (15 assembled boards):
+All three boards in one checkout (15 assembled boards), as actually ordered and shipped to the US in November 2026:
 
 | | Cost |
 |---|---|
 | Merchandise (3 × PCB + PCBA) | $227.72 |
-| Shipping to the US (0.70 kg, estimate) | $31.69 |
-| **Total before coupons** | **$259.41** |
-| New-user coupons, if JLCPCB accepts all three (SMT $10, PCB $6, shipping $10) | up to −$26.00 |
-| **Total after coupons** | **about $233.41** (about $15.56 per assembled board) |
+| Shipping (the cart page had estimated $31.69 for UPS Express Saver) | $64.13 |
+| US customs duties and taxes | $79.73 |
+| Duty and tax disbursement fee | $4.44 |
+| **Order total** | **$376.02** (about $25 per assembled board) |
 
-Not included: the battery holder (BT1, bought separately, see [Battery holders](#battery-holders)), the XIAO ESP32-C6, the battery, and any import duties.
+**Budget for more than the cart shows.** The cart's shipping estimate is only a starting point: the shipping charge depends on the method you choose at checkout. US import duties and taxes on the assembled boards came to about 35% of the merchandise total, and JLCPCB charges them at checkout (DDP). Coupons (below) come off the total. Ordering fewer board sizes lowers every line, since each design is a separate PCB + PCBA order.
+
+Not included: the battery holder (BT1, bought separately, see [Battery holders](#battery-holders)), the XIAO ESP32-C6 and the battery.
 
 **Coupons:** JLCPCB uses account coupons rather than codes, and you choose them in the payment step of checkout. New accounts get New User SMT ($10), PCB ($6) and Shipping ($10) coupons, and the [coupon center](https://jlcpcb.com/coupon-center) has more (for example, "PCBA Special Offer" $9/$6). Checking out in the **JLCONE desktop app** unlocks a "JLCONE PCBA $20" coupon for assembly orders over $100, which beats the $10 one for a three-board order. JLCPCB's terms allow one coupon per order, so the checkout page has the final say. Check out all three boards together: separate orders each pay their own shipping (about $27), which costs more than the extra coupons save.
 
@@ -229,6 +235,7 @@ For comparison, the same 18350 order as *Standard* PCBA on OSP came to $96.33.
 - **Solder the XIAO sockets yourself.** J1–J3 and J5 (C42379199, C42379198) cost about $5.65 in parts per 5-board order, plus two extended-part fees (about $6). Untick them on the BOM page and solder ordinary 2.54 mm female headers.
 - **Drop the status LED.** D1 (and its resistor R8) are optional. Unticking D1 saves one extended-part fee.
 - **Basic parts were preferred** where they did not change the circuit: R7 (100 kΩ) uses basic part C25741.
+- **Order only the universal board** if you haven't decided on a cell size: one design covers all three holders, so you pay one set of setup and extended-part fees.
 
 **Part changes made while ordering:**
 - **R1 on the 18650/21700:** C4129882 (910 Ω, 5%) was out of stock, so R1 is now Uniroyal 0402WGF9100TCE, **C44933** (910 Ω, 1%, about 228k in stock). The value and charge current (about 590 mA) are unchanged.
