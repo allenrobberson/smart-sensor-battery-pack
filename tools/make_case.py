@@ -346,27 +346,31 @@ def check(base, lid, info):
 
 
 # ---------------------------------------------------------------- previews
-def raster(tris, size=520, elev=28, azim=-55, color=(0.30, 0.45, 0.70)):
-    """Tiny z-buffer renderer: orthographic view, flat shading. Returns an RGB array."""
-    T = np.array(tris, dtype=float)
+def raster(groups, size=520, elev=28, azim=-55, scale=None, height=None):
+    """Tiny z-buffer renderer: orthographic view, flat shading. groups = [(tris, rgb), ...]."""
+    T = np.concatenate([np.array(t, dtype=float) for t, _ in groups])
+    tcol = np.concatenate([np.tile(np.array(c, dtype=float), (len(t), 1)) for t, c in groups])
     a, e = math.radians(azim), math.radians(elev)
     Rz = np.array([[math.cos(a), -math.sin(a), 0], [math.sin(a), math.cos(a), 0], [0, 0, 1]])
     Rx = np.array([[1, 0, 0], [0, math.cos(e - math.pi / 2), -math.sin(e - math.pi / 2)],
                    [0, math.sin(e - math.pi / 2), math.cos(e - math.pi / 2)]])
     V = T.reshape(-1, 3) @ Rz.T @ Rx.T
-    mn, mx = V.min(0), V.max(0); sc = (size - 20) / max(mx[0] - mn[0], mx[1] - mn[1])
-    P = np.empty_like(V); P[:, 0] = (V[:, 0] - mn[0]) * sc + 10; P[:, 1] = size - ((V[:, 1] - mn[1]) * sc + 10); P[:, 2] = V[:, 2]
+    mn, mx = V.min(0), V.max(0)
+    W = size; Hh = height or size
+    sc = scale or (min(W, Hh) - 20) / max(mx[0] - mn[0], mx[1] - mn[1])
+    ox = (W - (mx[0] - mn[0]) * sc) / 2; oy = 10        # centred horizontally, bottom-aligned
+    P = np.empty_like(V); P[:, 0] = (V[:, 0] - mn[0]) * sc + ox; P[:, 1] = Hh - ((V[:, 1] - mn[1]) * sc + oy); P[:, 2] = V[:, 2]
     P = P.reshape(-1, 3, 3)
     N = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0]); N /= np.linalg.norm(N, axis=1)[:, None] + 1e-12
     Nv = N @ Rz.T @ Rx.T
     light = np.array([-0.35, 0.45, 0.82]); light /= np.linalg.norm(light)
     shade = np.clip(Nv @ light, 0, 1) * 0.7 + 0.3
-    img = np.ones((size, size, 3)); zb = np.full((size, size), -1e9)
+    img = np.ones((Hh, W, 3)); zb = np.full((Hh, W), -1e9)
     for t, (p0, p1, p2) in enumerate(P):
         if Nv[t, 2] <= 0:      # back-face culling
             continue
-        x0, x1 = int(max(min(p0[0], p1[0], p2[0]), 0)), int(min(max(p0[0], p1[0], p2[0]) + 1, size))
-        y0, y1 = int(max(min(p0[1], p1[1], p2[1]), 0)), int(min(max(p0[1], p1[1], p2[1]) + 1, size))
+        x0, x1 = int(max(min(p0[0], p1[0], p2[0]), 0)), int(min(max(p0[0], p1[0], p2[0]) + 1, W))
+        y0, y1 = int(max(min(p0[1], p1[1], p2[1]), 0)), int(min(max(p0[1], p1[1], p2[1]) + 1, Hh))
         if x1 <= x0 or y1 <= y0:
             continue
         xs, ys = np.meshgrid(np.arange(x0, x1) + 0.5, np.arange(y0, y1) + 0.5)
@@ -380,7 +384,7 @@ def raster(tris, size=520, elev=28, azim=-55, color=(0.30, 0.45, 0.70)):
         z = w0 * p0[2] + w1 * p1[2] + w2 * p2[2]
         sub = zb[y0:y1, x0:x1]; m &= z > sub
         sub[m] = z[m]
-        img[y0:y1, x0:x1][m] = np.array(color) * shade[t]
+        img[y0:y1, x0:x1][m] = tcol[t] * shade[t]
     return img
 
 
@@ -424,8 +428,9 @@ def render(path, parts, title):
     import matplotlib; matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     fig, axs = plt.subplots(1, len(parts), figsize=(5 * len(parts), 5.6))
-    for ax, (label, tris, col, view) in zip(axs, parts):
-        ax.imshow(raster(tris, color=matplotlib.colors.to_rgb(col), **view)); ax.axis('off'); ax.set_title(label, fontsize=12)
+    for ax, (label, groups, view) in zip(axs, parts):
+        g = [(t, matplotlib.colors.to_rgb(c)) for t, c in groups]
+        ax.imshow(raster(g, **view)); ax.axis('off'); ax.set_title(label, fontsize=12)
     fig.suptitle(title, fontsize=14); plt.tight_layout(); plt.savefig(path, dpi=80); plt.close(fig)
 
 
@@ -450,6 +455,7 @@ def main():
     os.makedirs(os.path.join(ROOT, 'case', 'stl'), exist_ok=True)
     os.makedirs(os.path.join(ROOT, 'case', 'images'), exist_ok=True)
     report = []
+    overview = []
     lids_done = {}
     for name, board, holder in CASES:
         base, lid, info = build(name, board, holder)
@@ -467,21 +473,55 @@ def main():
             lids_done[lid_name] = True
         # preview: base, lid as printed, assembled
         asm_b = to_case_frame(bt, info); asm_l = to_case_frame(lt, info)
+        lift = 25.0
+        exploded_lid = [tuple((x, y, z + lift) for (x, y, z) in t) for t in asm_l]
+        B, L = '#4c72b0', '#dd8452'
         render(os.path.join(ROOT, 'case', 'images', 'case-%s.png' % name),
-               [('base', bstl, '#4c72b0', dict(elev=35, azim=-55)),
-                ('lid (shown as printed, roof down)', lstl, '#dd8452', dict(elev=35, azim=-55)),
-                ('lid, outside: USB-C window and vents', asm_l, '#dd8452', dict(elev=25, azim=35)),
-                ('assembled', asm_b + asm_l, '#8c8c8c', dict(elev=22, azim=-60))],
+               [('exploded: lid (orange) lifted off the base (blue)', [(asm_b, B), (exploded_lid, L)], dict(elev=24, azim=-58)),
+                ('base (open top, lip and ribs)', [(asm_b, B)], dict(elev=38, azim=-55)),
+                ('lid from below (fingers, USB-C window)', [(asm_l, L)], dict(elev=-35, azim=-55)),
+                ('assembled (USB-C side)', [(asm_b, B), (asm_l, L)], dict(elev=22, azim=35))],
                'Case for the %s board (%s holder): %.1f x %.1f x %.1f mm' % (name, holder, *size))
         section_png(os.path.join(ROOT, 'case', 'images', 'case-%s-section.png' % name), base, lid, info,
                     'Case for the %s board: sections (blue = base, orange = lid)' % name)
         vol = lambda T: sum(np.dot(a, np.cross(b, c)) for a, b, c in T) / 6.0
         info['volumes'] = (vol(bstl), vol(lstl))
         report.append((name, holder, size, len(bt), len(lt), okb and okl, problems, info))
+        if name in ('18350', '18650', '21700', 'universal-21700'):
+            overview.append((name, holder, size, asm_b, exploded_lid))
         print('%-16s %-5s outer %.1f x %.1f x %.1f mm  tris base %d lid %d  watertight %s  vol %.1f/%.1f cm3  fingers %d  interference: %s'
               % (name, holder, *size, len(bt), len(lt), okb and okl, info['volumes'][0] / 1000, info['volumes'][1] / 1000,
                  len(info['fingers']), problems or 'none'))
+    overview_png(os.path.join(ROOT, 'case', 'images', 'cases-overview.png'), overview)
     return report
+
+
+def overview_png(path, items):
+    """All four cases side by side, each with the lid lifted off its base, at one common scale."""
+    import matplotlib; matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    view = dict(elev=20, azim=-60)
+    # common scale: fit the largest exploded model into the panel
+    W, Hh = 520, 470
+    a, e = math.radians(view['azim']), math.radians(view['elev'])
+    Rz = np.array([[math.cos(a), -math.sin(a), 0], [math.sin(a), math.cos(a), 0], [0, 0, 1]])
+    Rx = np.array([[1, 0, 0], [0, math.cos(e - math.pi / 2), -math.sin(e - math.pi / 2)],
+                   [0, math.sin(e - math.pi / 2), math.cos(e - math.pi / 2)]])
+    ext = []
+    for _, _, _, b, l in items:
+        V = np.array(b + l, dtype=float).reshape(-1, 3) @ Rz.T @ Rx.T
+        ext.append(V.max(0) - V.min(0))
+    sc = min((W - 30) / max(x[0] for x in ext), (Hh - 30) / max(x[1] for x in ext))
+    fig, axs = plt.subplots(1, len(items), figsize=(4.2 * len(items), 5.4))
+    B, L = matplotlib.colors.to_rgb('#4c72b0'), matplotlib.colors.to_rgb('#dd8452')
+    for ax, (name, holder, size, b, l) in zip(axs, items):
+        ax.imshow(raster([(b, B), (l, L)], size=W, height=Hh, scale=sc, **view)); ax.axis('off')
+        title = 'Universal board' if name.startswith('universal') else '%s board' % name
+        sub = ('lid + base for the %s holder\n(18350/18650 bases share this lid)' % HOLDERS[holder]['cell']
+               if name.startswith('universal') else '%s holder, %s cell' % (holder, HOLDERS[holder]['cell']))
+        ax.set_title('%s\n%s\n%.1f x %.1f x %.1f mm' % (title, sub, *size), fontsize=11)
+    fig.suptitle('3D-printable cases: lid (orange) lifted off the base (blue)', fontsize=15, y=0.99)
+    plt.tight_layout(rect=(0, 0, 1, 0.93)); plt.savefig(path, dpi=80); plt.close(fig)
 
 
 if __name__ == '__main__':

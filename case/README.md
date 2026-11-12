@@ -13,6 +13,10 @@ A two-part case (base + lid) for every board size. The STL files in `stl/` are g
 
 The three universal bases share one lid; only the ribs and depth under the battery differ. The sizes include the wall-mount tabs on the base ends (9 mm each way).
 
+![All four cases, lid lifted off the base](images/cases-overview.png)
+
+Each case has its own preview, `images/case-<board>.png` (exploded, base, lid from below, assembled), and a cut-away fit check, `images/case-<board>-section.png`. The 18650 ones are shown below.
+
 ![18650 case](images/case-18650.png)
 ![18650 case sections](images/case-18650-section.png)
 

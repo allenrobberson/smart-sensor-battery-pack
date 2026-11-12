@@ -133,7 +133,9 @@ A two-part case (base + lid) for every board, in [`case/stl/`](case/stl). Detail
 | 21700 | [`case-21700-base.stl`](case/stl/case-21700-base.stl) + [`case-21700-lid.stl`](case/stl/case-21700-lid.stl) |
 | Universal | the base for the holder you fitted ([`18350`](case/stl/case-universal-18350-base.stl), [`18650`](case/stl/case-universal-18650-base.stl) or [`21700`](case/stl/case-universal-21700-base.stl)) + [`case-universal-lid.stl`](case/stl/case-universal-lid.stl) |
 
-![18650 case](case/images/case-18650.png)
+![All four cases, lid lifted off the base](case/images/cases-overview.png)
+
+More views of each case (exploded, base, lid from below, assembled) and cut-away fit checks are in [`case/images/`](case/images).
 
 - **Base:** the board drops in battery-side down and rests on ribs under the holder's end walls.
 - **Lid:** clicks onto a lip on the base; small fingers stop just above the board's edges so it can't move.
