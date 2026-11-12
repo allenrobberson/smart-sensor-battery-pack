@@ -4,6 +4,8 @@ A small battery board for a Seeed XIAO microcontroller and an SHTC3 temperature 
 
 This is a fork of [FeatureNAB/smart-sensor-battery-pack](https://github.com/FeatureNAB/smart-sensor-battery-pack). It adds two larger battery sizes (18650 and 21700), a **universal board** that takes any of the three holders, a few protection and power improvements, and ready-to-use ESPHome firmware for Home Assistant. All the boards share the same circuit and front-side layout. The full list of changes is under [Changes from the original design](#changes-from-the-original-design).
 
+**Downloads:** each board option (18350, 18650, 21700, universal) comes as one zip on the [Releases page](https://github.com/allenrobberson/smart-sensor-battery-pack/releases). Each zip has the Gerbers, the JLCPCB BOM and placement files, the case STLs, the firmware and a KiCad project that opens on its own.
+
 The original design, with the build, design theory and assembly, is explained in this video:
 
 [![Watch the video](https://img.youtube.com/vi/-wEKOhVZ0NM/0.jpg)](https://www.youtube.com/watch?v=-wEKOhVZ0NM)
@@ -483,6 +485,7 @@ variants/universal/            universal board: 18350, 18650 or 21700 holder (Ki
 tools/make_variant.py          generates the variant boards from the master
 tools/make_universal.py        generates the universal board from the 21700 variant
 tools/make_case.py             generates the 3D-printable case STLs and previews
+tools/make_release.py          builds the per-board release zips (python3 tools/make_release.py 1.0)
 case/                          3D-printable case: STL files, preview images and print notes
 tools/make_gerbers.py          writes Gerber and drill files without KiCad
 tools/make_jlc_bom.py          writes JLCPCB BOM and placement files

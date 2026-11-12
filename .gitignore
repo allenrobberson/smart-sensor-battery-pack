@@ -2,3 +2,4 @@ firmware/secrets.yaml
 secrets.yaml
 .esphome/
 __pycache__/
+release/
