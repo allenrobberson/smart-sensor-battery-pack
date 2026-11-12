@@ -6,6 +6,8 @@ This is a fork of [FeatureNAB/smart-sensor-battery-pack](https://github.com/Feat
 
 **Downloads:** each board option (18350, 18650, 21700, universal) comes as one zip on the [Releases page](https://github.com/allenrobberson/smart-sensor-battery-pack/releases). Each zip has the Gerbers, the JLCPCB BOM and placement files, the case STLs, the firmware and a KiCad project that opens on its own.
 
+> **U6 rotation fix (12 November 2026):** placement (CPL) files downloaded before this date have U6 (CSD85301Q2) at 180°; the correct angle is 90°. Use the v1.0 release files. If you already ordered with the old files, ask JLCPCB to rotate U6 to 90° (see [the rotation note](#assembled-by-jlcpcb-bom-and-placement-files)).
+
 The original design, with the build, design theory and assembly, is explained in this video:
 
 [![Watch the video](https://img.youtube.com/vi/-wEKOhVZ0NM/0.jpg)](https://www.youtube.com/watch?v=-wEKOhVZ0NM)
@@ -192,7 +194,7 @@ Every part except the battery holder uses a JLCPCB/LCSC part number:
 Things to know before ordering assembly:
 - **Battery holder:** BT1 is not in the BOM, so buy it separately and solder it yourself (see [Battery holders](#battery-holders) below).
 - **Extended parts:** most of the ICs are JLCPCB "extended" parts, which carry a small one-time loading fee each. Stock changes, so the quote page will flag anything that has run out.
-- **Rotations are already corrected:** the CPL files include JLCPCB's zero-angle offsets for the sockets, SOT-23, SOT-23-5, SOT-23-6, SHTC3 and CSD85301Q2 parts (see `ROTATION_FIX` in `tools/make_jlc_bom.py`). Every part was checked in JLCPCB's placement preview: each IC's pin-1 marker sits at the board's pin-1 mark and its leads on the pads. All four boards share identical front-side pads and placement data, so the check covers all of them. **U6 (CSD85301Q2) needs 90°, not 180°:** JLCPCB's library footprint for C544396 has the pins in rows with pin 1 bottom-left, while the KiCad footprint has them in columns. The first CPL files (used for the November 2026 order of the 18350/18650/21700 boards) had U6 at 180°, which turns the part 90° on its pads. This was fixed on 12 November 2026; if you downloaded the assembly files before then, download them again.
+- **Rotations are already corrected:** the CPL files include JLCPCB's zero-angle offsets for the sockets, SOT-23, SOT-23-5, SOT-23-6, SHTC3 and CSD85301Q2 parts (see `ROTATION_FIX` in `tools/make_jlc_bom.py`). Every part was checked in JLCPCB's placement preview: each IC's pin-1 marker sits at the board's pin-1 mark and its leads on the pads. All four boards share identical front-side pads and placement data, so the check covers all of them. **U6 (CSD85301Q2) needs 90°, not 180°:** JLCPCB's library footprint for C544396 has the pins in rows with pin 1 bottom-left, while the KiCad footprint has them in columns. The first CPL files (used for the November 2026 order of the 18350/18650/21700 boards) had U6 at 180°, which turns the part 90° on its pads. This was fixed on 12 November 2026; if you downloaded the assembly files before then, download them again. **If you already placed an order with the old CPL file,** message JLCPCB (through the order's File Review or support chat) before assembly and ask them to place U6 (CSD85301Q2, C544396) at 90° so that pin 1 sits at the silkscreen dot. They can correct the rotation on an order that is still in review.
 - **The XIAO:** it plugs into the sockets and isn't part of the order.
 
 #### Tested JLCPCB order settings (November 2026)
