@@ -119,7 +119,7 @@ One board that takes any of the three holders, so you can order a single design 
 
 The front side, parts and routing are the same as the other three boards, so the same firmware and BOM apply. The only BOM difference is R1. The board and its files were made by `tools/make_universal.py`.
 
-**What has been checked:** the Gerbers have no shorts or broken nets; every hole and slot keeps at least 0.3 mm from other-net copper; no copper is within 0.25 mm of the board edge; and JLCPCB accepted the files, matched all 19 parts and showed the slots correctly. **Not yet checked:** a KiCad DRC run (open `variants/universal/` in KiCad, press B to refill zones, then run DRC) and a physical test-fit of each holder. Check the peg slots against a real holder before ordering in quantity.
+**What has been checked:** the Gerbers have no shorts or broken nets; every hole and slot keeps at least 0.3 mm from other-net copper; no copper is within 0.25 mm of the board edge; JLCPCB accepted the files, matched all 19 parts and showed the slots correctly; and every part's rotation was checked in JLCPCB's placement preview (pin-1 marks and leads on pads). **Not yet checked:** a KiCad DRC run (open `variants/universal/` in KiCad, press B to refill zones, then run DRC) and a physical test-fit of each holder. Check the peg slots against a real holder before ordering in quantity.
 
 ## Ordering boards (Gerber files)
 Ready-to-upload Gerber zips for all four boards are in [`gerbers/`](gerbers):
@@ -172,7 +172,7 @@ Things to know before ordering assembly:
 - **The XIAO:** it plugs into the sockets and isn't part of the order.
 
 #### Tested JLCPCB order settings (November 2026)
-The 18350, 18650 and 21700 files in `gerbers/` and `assembly/` are exactly the ones uploaded for a real order of those three boards. The universal board's files were uploaded with the same settings and quoted at **$73.82** for 5 assembled boards ($5.10 PCB + $68.72 assembly, including $0.91 nitrogen reflow); all 19 parts matched and were in stock, and JLCPCB's preview showed its slotted holes correctly. These settings went through without errors:
+The 18350, 18650 and 21700 Gerbers and BOMs are exactly the ones uploaded for a real order of those three boards. Their CPL (placement) files have since had one fix: U6 is now at 90° instead of 180° (see the rotation note above). The universal board's files were uploaded with the same settings and quoted at **$73.82** for 5 assembled boards ($5.10 PCB + $68.72 assembly, including $0.91 nitrogen reflow); all 19 parts matched and were in stock, and JLCPCB's preview showed its slotted holes correctly. These settings went through without errors:
 
 | Setting | Value | Why |
 |---------|-------|-----|
