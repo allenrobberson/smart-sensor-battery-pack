@@ -16,6 +16,7 @@ A big thank you to **FeatureNAB** for designing this board and sharing it openly
 - **18650 board** (`variants/18650/`): Keystone 1042 holder, 23 x 86.25 mm.
 - **21700 board** (`variants/21700/`): Keystone 1121 holder (also fits 20700), 24 x 84.55 mm.
 - **Universal board** (`variants/universal/`): one 24 x 86.25 mm board with pads and peg holes for the 1096, 1042 *or* 1121 holder, so one design covers 18350, 18650 and 21700. See [Universal](#universal-18350-18650-and-21700-on-one-board).
+- **3D-printable case** (`case/`): a base and lid for every board size, including the universal board, with a USB-C window, sensor vents and wall-mount tabs. See [3D-printable case](#3d-printable-case).
 - **Variant generator** (`tools/make_variant.py`): rebuilds the larger boards from the 18350 master after any change, swaps the holder, resizes the outline and checks that the holder's holes clear existing copper.
 
 **Circuit changes (all boards)**
@@ -120,6 +121,25 @@ One board that takes any of the three holders, so you can order a single design 
 The front side, parts and routing are the same as the other three boards, so the same firmware and BOM apply. The only BOM difference is R1. The board and its files were made by `tools/make_universal.py`.
 
 **What has been checked:** the Gerbers have no shorts or broken nets; every hole and slot keeps at least 0.3 mm from other-net copper; no copper is within 0.25 mm of the board edge; JLCPCB accepted the files, matched all 19 parts and showed the slots correctly; and every part's rotation was checked in JLCPCB's placement preview (pin-1 marks and leads on pads). **Not yet checked:** a KiCad DRC run (open `variants/universal/` in KiCad, press B to refill zones, then run DRC) and a physical test-fit of each holder. Check the peg slots against a real holder before ordering in quantity.
+
+
+## 3D-printable case
+A two-part case (base + lid) for every board, in [`case/stl/`](case/stl). Details and print settings are in [`case/README.md`](case/README.md).
+
+| Board | Print |
+|---|---|
+| 18350 | [`case-18350-base.stl`](case/stl/case-18350-base.stl) + [`case-18350-lid.stl`](case/stl/case-18350-lid.stl) |
+| 18650 | [`case-18650-base.stl`](case/stl/case-18650-base.stl) + [`case-18650-lid.stl`](case/stl/case-18650-lid.stl) |
+| 21700 | [`case-21700-base.stl`](case/stl/case-21700-base.stl) + [`case-21700-lid.stl`](case/stl/case-21700-lid.stl) |
+| Universal | the base for the holder you fitted ([`18350`](case/stl/case-universal-18350-base.stl), [`18650`](case/stl/case-universal-18650-base.stl) or [`21700`](case/stl/case-universal-21700-base.stl)) + [`case-universal-lid.stl`](case/stl/case-universal-lid.stl) |
+
+![18650 case](case/images/case-18650.png)
+
+- **Base:** the board drops in battery-side down and rests on ribs under the holder's end walls.
+- **Lid:** clicks onto a lip on the base; small fingers stop just above the board's edges so it can't move.
+- **USB-C window:** lined up with the XIAO's USB-C port, so you can charge and flash without opening the case.
+- **Vents** next to the SHTC3 sensor tab and across the roof, so the sensor reads room air; **wall-mount tabs** on both ends.
+- **Checked:** the generator checks every case against the board, holder, cell, every part, the XIAO and the USB-C plug path, and checks that the STLs are watertight. The case hasn't been test-printed yet. If your sockets or headers are a different height, change the values at the top of [`tools/make_case.py`](tools/make_case.py) and run it again.
 
 ## Ordering boards (Gerber files)
 Ready-to-upload Gerber zips for all four boards are in [`gerbers/`](gerbers):
@@ -460,6 +480,8 @@ variants/21700/                21700 board (KiCad project)
 variants/universal/            universal board: 18350, 18650 or 21700 holder (KiCad project)
 tools/make_variant.py          generates the variant boards from the master
 tools/make_universal.py        generates the universal board from the 21700 variant
+tools/make_case.py             generates the 3D-printable case STLs and previews
+case/                          3D-printable case: STL files, preview images and print notes
 tools/make_gerbers.py          writes Gerber and drill files without KiCad
 tools/make_jlc_bom.py          writes JLCPCB BOM and placement files
 firmware/                      ESPHome config and secrets template for the XIAO ESP32-C6
